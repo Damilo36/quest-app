@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, generateCode, randomColor, avatarLetter } from './supabase'
-import { OCCASIONS, VIBES, COUNTS, buildTaskList, getFlashChallenge, getQuote } from './data'
+import { OCCASIONS, VIBES, COUNTS, buildTaskList, getQuote } from './data'
+import ReelGenerator from './ReelGenerator'
 import { t as tr } from './i18n'
 import Album from './Album'
 import Legal from './Legal'
@@ -108,8 +109,6 @@ html,body,#root{height:100%;background:var(--bg);color:var(--white);font-family:
 @keyframes tin{from{opacity:0;transform:translateY(-10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .toast.dy{animation:tout .28s ease forwards}
 @keyframes tout{to{opacity:0;transform:translateY(-6px) scale(.97)}}
-.flash-bg{position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.88);animation:ov .3s ease}
-.flash-box{background:var(--s1);border:2px solid var(--cyan);border-radius:var(--r);padding:32px 28px;text-align:center;animation:pop .38s cubic-bezier(.16,1,.3,1);max-width:380px;width:100%}
 @keyframes pop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
 .alldone-bg{position:fixed;inset:0;z-index:88;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.85);animation:ov .3s ease}
 .alldone-box{background:var(--s1);border:2px solid var(--lime);border-radius:var(--r);padding:32px 28px;text-align:center;animation:pop .4s cubic-bezier(.16,1,.3,1);max-width:380px;width:100%}
@@ -414,8 +413,12 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
     return()=>supabase.removeChannel(ch)
   },[sessionId])
 
-  const copyLink=()=>{
-    navigator.clipboard.writeText(`${appUrl}?join=${sessionCode}`)
+  const copyLink=async()=>{
+    const url=`${appUrl}?join=${sessionCode}`
+    if(navigator.share){
+      try{await navigator.share({title:'Memofox 🦊',text:`Komm zu meiner Memofox Session! Code: ${sessionCode}`,url});return}catch(e){}
+    }
+    navigator.clipboard.writeText(url)
     setCopied(true);setTimeout(()=>setCopied(false),2000)
   }
 
@@ -431,7 +434,17 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
       </div>
       <div className="card fu" style={{textAlign:'center',padding:'26px 20px',marginBottom:14,position:'relative'}}>
         <div style={{position:'absolute',top:-1,left:'50%',transform:'translateX(-50%)',background:'var(--lime)',color:'var(--bg)',fontSize:10,fontFamily:'Syne',fontWeight:700,padding:'4px 12px',borderRadius:'0 0 8px 8px',letterSpacing:'.1em',textTransform:'uppercase'}}>{T('scanQR')}</div>
-        <div style={{marginBottom:14}}><QRCodeDisplay code={sessionCode}/></div>
+        <div style={{marginBottom:14}}>
+          <div style={{width:176,height:176,background:'white',borderRadius:14,padding:8,margin:'0 auto'}}>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(window.location.origin+'?join='+sessionCode)}&color=07080A&bgcolor=ffffff`}
+              alt="QR Code"
+              width={160}
+              height={160}
+              style={{display:'block',borderRadius:8}}
+            />
+          </div>
+        </div>
         <div className="disp" style={{fontSize:28,letterSpacing:'.14em',color:'var(--lime)',marginBottom:5}}>{sessionCode}</div>
         <div style={{fontSize:12,color:'var(--muted)'}}>{T('orEnterCode')}</div>
       </div>
@@ -481,7 +494,7 @@ function JoinScreen({lang,prefillCode,onJoined,onBack}){
     try{
       const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
       streamRef.current=stream
-      if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.play()}
+      if(videoRef.current){videoRef.current.srcObject=stream}
       setScanning(true)
       setTimeout(()=>{stopScan()},10000)
     }catch(e){setErr('Kamera nicht verfügbar. Code manuell eingeben.')}
@@ -516,7 +529,7 @@ function JoinScreen({lang,prefillCode,onJoined,onBack}){
         {scanning?(
           <div style={{marginBottom:20,textAlign:'center'}}>
             <div className="qr-scan" style={{position:'relative',display:'inline-block'}}>
-              <video ref={videoRef} playsInline muted style={{width:220,height:220,objectFit:'cover',borderRadius:16,display:'block'}}/>
+              <video ref={videoRef} autoPlay playsInline muted style={{width:220,height:220,objectFit:'cover',borderRadius:16,display:'block'}}/>
               {/* Corner markers */}
               {[['top:8px','left:8px','borderWidth:3px 0 0 3px','borderRadius:4px 0 0 0'],
                 ['top:8px','right:8px','borderWidth:3px 3px 0 0','borderRadius:0 4px 0 0'],
@@ -562,19 +575,20 @@ function JoinScreen({lang,prefillCode,onJoined,onBack}){
 }
 
 /* ─── GAME ─────────────────────────────────────────────────────────────────── */
-function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myColor,isHost,showQRGlobal,setShowQRGlobal,onEnd,onSaveSession}){
+function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,myNickname,myColor,isHost,showQRGlobal,setShowQRGlobal,onEnd,onSaveSession}){
   const T=(k,...a)=>tr(k,lang,...a)
   const[tasks,setTasks]=useState([])
   const[parts,setParts]=useState([])
   const[activeId,setActiveId]=useState(null)
   const[phase,setPhase]=useState('list')
   const[uploading,setUploading]=useState(false)
-  const[flash,setFlash]=useState(null)
   const[streak,setStreak]=useState(0)
   const[endConfirm,setEndConfirm]=useState(false)
   const[allDone,setAllDone]=useState(false)
   const fileRef=useRef()
+  const cameraRef=useRef()
   const{toasts,add}=useToast()
+  const multiAllowed=sessionConfig?.multi||false
 
   useEffect(()=>{
     if(!sessionId)return
@@ -585,8 +599,7 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
         p=>{
           setTasks(prev=>{
             const updated=prev.map(t=>t.id===p.new.id?p.new:t)
-            // Check if all done
-            if(updated.every(t=>t.status==='done'))setTimeout(()=>setAllDone(true),500)
+            if(updated.every(t=>t.status==='done'||t.status==='done_multi'))setTimeout(()=>setAllDone(true),500)
             return updated
           })
           if(p.new.status==='done'&&p.new.claimed_by!==myParticipantId)
@@ -597,18 +610,20 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sessions',filter:`id=eq.${sessionId}`},
         p=>{if(p.new.status==='ended')onEnd()})
       .subscribe()
-    // Flash challenge after 3 min
-    const ft=setTimeout(()=>{const f=getFlashChallenge(lang);setFlash(f)},180000)
-    return()=>{supabase.removeChannel(ch);clearTimeout(ft)}
+    return()=>{supabase.removeChannel(ch)}
   },[sessionId])
 
   const myActive=tasks.find(t=>t.claimed_by===myParticipantId&&t.status==='active')
 
   const pickTask=async(task)=>{
-    if(task.status!=='open'||myActive)return
+    // Multi-allowed: done tasks can be picked again; single: only open tasks
+    const canPick=multiAllowed
+      ?(task.status==='open'||task.status==='done')&&!myActive
+      :task.status==='open'&&!myActive
+    if(!canPick)return
     setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}:t))
     setActiveId(task.id);setPhase('active')
-    const{data,error}=await supabase.from('tasks').update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}).eq('id',task.id).eq('status','open').select().single()
+    const{data,error}=await supabase.from('tasks').update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}).eq('id',task.id).select().single()
     if(error||!data){
       setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
       setActiveId(null);setPhase('list')
@@ -617,17 +632,20 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
 
   const cancelTask=async()=>{
     if(!activeId)return
-    await supabase.from('tasks').update({status:'open',claimed_by:null,claimed_by_nickname:null}).eq('id',activeId)
-    setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
+    // Restore previous status
+    const task=tasks.find(t=>t.id===activeId)
+    const prevStatus=multiAllowed&&task?.times_done>0?'done':'open'
+    await supabase.from('tasks').update({status:prevStatus,claimed_by:null,claimed_by_nickname:null}).eq('id',activeId)
+    setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:prevStatus,claimed_by:null,claimed_by_nickname:null}:t))
     setActiveId(null);setPhase('list')
   }
 
   const completeTask=async(file)=>{
-    if(!activeId||!file)return  // Photo is REQUIRED
+    if(!activeId||!file)return
     setUploading(true)
     let photoUrl=null
     try{
-      const ext=file.name.split('.').pop()||'jpg'
+      const ext=file.name?.split('.').pop()||'jpg'
       const path=`${sessionId}/${activeId}_${Date.now()}.${ext}`
       const{error:upErr}=await supabase.storage.from('proofs').upload(path,file,{upsert:true})
       if(!upErr){
@@ -635,10 +653,11 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
         photoUrl=publicUrl
       }
       const task=tasks.find(t=>t.id===activeId)
-      await supabase.from('tasks').update({status:'done',photo_url:photoUrl,completed_at:new Date().toISOString()}).eq('id',activeId)
-      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'done',photo_url:photoUrl}:t))
+      const newStatus=multiAllowed?'open':'done'
+      await supabase.from('tasks').update({status:newStatus,photo_url:photoUrl,completed_at:new Date().toISOString(),claimed_by:null,claimed_by_nickname:null}).eq('id',activeId)
+      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:newStatus,photo_url:photoUrl,claimed_by:null,claimed_by_nickname:null}:t))
       const ns=streak+1;setStreak(ns)
-      add(ns>=3?T('streakMsg',ns):T('completedMsg',(task?.text||'').slice(0,26)),'D',myColor||'#C6FF00')
+      add(ns>=3?T('streakMsg',ns):T('completedMsg',(task?.text||'').slice(0,26)),'✓',myColor||'#C6FF00')
       setActiveId(null);setPhase('list')
     }catch(e){console.error(e)}
     setUploading(false)
@@ -697,17 +716,19 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
       </div>
 
       {/* Tasks */}
-      <div style={{padding:'14px 24px',display:'flex',flexDirection:'column',gap:9}}>
+      <div style={{padding:'14px 24px',display:'flex',flexDirection:'column',gap:9,paddingBottom:100}}>
         {tasks.map((task,idx)=>{
           const isMyAct=task.claimed_by===myParticipantId&&task.status==='active'
           const isOtherAct=task.status==='active'&&task.claimed_by!==myParticipantId
-          const isDone=task.status==='done'
+          const isDone=task.status==='done'&&!multiAllowed
+          const isDoneMulti=task.status==='done'&&multiAllowed // in multi mode: show as done but still clickable
           const hasMyAct=!!myActive
+          const canClick=(task.status==='open'||(multiAllowed&&task.status==='done'))&&!hasMyAct
           return(
             <div key={task.id}
               className={`tc ${isDone?'tdone':''} ${isOtherAct?'tlock':''} ${task.is_golden&&!isDone?'tgold':''} ${isMyAct?'tact':''}`}
-              onClick={()=>task.status==='open'&&!hasMyAct?pickTask(task):null}
-              style={{cursor:task.status==='open'&&!hasMyAct?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`}}>
+              onClick={()=>canClick?pickTask(task):null}
+              style={{cursor:canClick?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`,opacity:isDoneMulti?0.6:1}}>
               {task.is_golden&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cg" style={{fontSize:10,padding:'3px 8px'}}>{T('goldenTask')}</span></div>}
               {task.is_custom&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>{T('customTask')}</span></div>}
               <div style={{display:'flex',alignItems:'flex-start',gap:13}}>
@@ -717,6 +738,7 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     <span className="chip" style={{fontSize:10,padding:'3px 8px'}}>{T('photo')}</span>
                     {isDone&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>{T('done')} {task.claimed_by_nickname||''}</span>}
+                    {isDoneMulti&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>✓ {task.claimed_by_nickname} · {lang==='de'?'nochmal möglich':'repeatable'}</span>}
                     {isOtherAct&&<span className="chip cr" style={{fontSize:10,padding:'3px 8px'}}>{T('locked')} {task.claimed_by_nickname}</span>}
                     {isMyAct&&<span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>{T('myTurn')}</span>}
                   </div>
@@ -758,34 +780,24 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
           <div className="sheet">
             <div className="sh"/>
             <div className="head" style={{fontSize:21,marginBottom:5}}>{T('uploadTitle')}</div>
-            <p style={{color:'var(--muted)',fontSize:13,marginBottom:22}}>{T('uploadSub')}</p>
-            {/* No capture="environment" so both camera and gallery work */}
+            <p style={{color:'var(--muted)',fontSize:13,marginBottom:20}}>{T('uploadSub')}</p>
+            {/* Camera input - opens directly to camera */}
+            <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:'none'}}
+              onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
+            {/* Gallery input - opens file picker */}
             <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}}
               onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
-            <div onClick={()=>fileRef.current?.click()} style={{border:'2px dashed rgba(198,255,0,.22)',borderRadius:'var(--r)',padding:'32px',textAlign:'center',marginBottom:18,cursor:'pointer',background:'var(--ld)',transition:'all .2s'}}>
-              <div style={{fontSize:40,marginBottom:9}}>📷</div>
-              <div style={{fontFamily:'Syne',fontWeight:700,marginBottom:3,fontSize:14}}>{uploading?<><Spinner/> {T('uploading')}</>:T('openCamera')}</div>
-              <div style={{fontSize:12,color:'var(--muted)'}}>📸 {lang==='de'?'Kamera oder Galerie':'Camera or Gallery'}</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
+              <button onClick={()=>cameraRef.current?.click()} style={{padding:'18px',background:'var(--ld)',border:'2px solid rgba(198,255,0,.25)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--lime)',fontFamily:'Syne',fontWeight:700,fontSize:15,transition:'all .2s'}}>
+                {uploading?<><span className="spin">⟳</span> {T('uploading')}</>:<><span style={{fontSize:24}}>📷</span> {lang==='de'?'Kamera öffnen':'Open Camera'}</>}
+              </button>
+              <button onClick={()=>fileRef.current?.click()} style={{padding:'16px',background:'var(--s2)',border:'1.5px solid var(--bdr2)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--white)',fontFamily:'Syne',fontWeight:600,fontSize:14,transition:'all .2s'}}>
+                <span style={{fontSize:20}}>🖼️</span> {lang==='de'?'Aus Galerie wählen':'Choose from Gallery'}
+              </button>
             </div>
             <button onClick={()=>setPhase('active')} className="btn bs" style={{padding:'13px',border:'1px solid var(--bdr2)'}}>{T('back')}</button>
           </div>
         </>
-      )}
-
-      {/* Flash */}
-      {flash&&(
-        <div className="flash-bg">
-          <div className="flash-box">
-            <div style={{fontSize:40,marginBottom:11}}>⚡</div>
-            <span className="chip cc" style={{marginBottom:13,display:'inline-flex'}}>{T('flashTitle')}</span>
-            <div className="head" style={{fontSize:19,marginBottom:11,lineHeight:1.45}}>{flash.t}</div>
-            <div style={{fontSize:12,color:'var(--muted)',marginBottom:22}}>{flash.dur} {T('flashSec')}</div>
-            <div style={{display:'flex',gap:9}}>
-              <button onClick={()=>setFlash(null)} className="btn bs" style={{flex:1,padding:'13px',border:'1px solid var(--bdr2)'}}>{T('skip')}</button>
-              <button onClick={()=>setFlash(null)} className="btn bp" style={{flex:1,padding:'13px'}}>{T('go')}</button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* All done celebration */}
@@ -804,17 +816,31 @@ function GameScreen({lang,sessionId,sessionCode,myParticipantId,myNickname,myCol
         </div>
       )}
 
-      {/* QR Sheet */}
+      {/* QR Sheet — real join link */}
       {showQRGlobal&&(
         <>
           <div className="overlay" onClick={()=>setShowQRGlobal(false)}/>
           <div className="sheet">
             <div className="sh"/>
             <div className="head" style={{fontSize:19,marginBottom:4,textAlign:'center'}}>{T('qrTitle')}</div>
-            <p style={{color:'var(--muted)',fontSize:12,textAlign:'center',marginBottom:20}}>{T('qrSub')}</p>
-            <div style={{marginBottom:18}}><QRCodeDisplay code={sessionCode}/></div>
-            <div className="disp" style={{fontSize:26,letterSpacing:'.14em',color:'var(--lime)',textAlign:'center',marginBottom:12}}>{sessionCode}</div>
-            <button onClick={shareSession} className="btn bs" style={{marginBottom:10,border:'1px solid var(--bdr2)'}}>
+            <p style={{color:'var(--muted)',fontSize:12,textAlign:'center',marginBottom:16}}>{T('qrSub')}</p>
+            {/* Real QR Code via Google Charts API */}
+            <div style={{width:200,height:200,margin:'0 auto 16px',borderRadius:16,overflow:'hidden',background:'white',padding:8}}>
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=184x184&data=${encodeURIComponent(window.location.origin+'?join='+sessionCode)}&color=07080A&bgcolor=ffffff`}
+                alt="QR Code"
+                width={184}
+                height={184}
+                style={{display:'block',borderRadius:8}}
+              />
+            </div>
+            <div className="disp" style={{fontSize:26,letterSpacing:'.14em',color:'var(--lime)',textAlign:'center',marginBottom:6}}>{sessionCode}</div>
+            <p style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginBottom:16}}>{window.location.origin}?join={sessionCode}</p>
+            <button onClick={()=>{
+              const url=`${window.location.origin}?join=${sessionCode}`
+              if(navigator.share){navigator.share({title:T('shareTitle'),text:T('shareText'),url}).catch(()=>{})}
+              else{navigator.clipboard.writeText(url)}
+            }} className="btn bs" style={{marginBottom:10,border:'1px solid var(--bdr2)'}}>
               📤 {lang==='de'?'Link teilen':'Share Link'}
             </button>
             <button onClick={()=>setShowQRGlobal(false)} className="btn bp">{T('close')}</button>
@@ -849,6 +875,7 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
   const[completions,setCompletions]=useState([])
   const[parts,setParts]=useState([])
   const[showZeugnis,setShowZeugnis]=useState(false)
+  const[showReel,setShowReel]=useState(false)
   const[copied,setCopied]=useState(false)
 
   useEffect(()=>{
@@ -910,36 +937,49 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
         <div className="stat"><div className="sn">{parts.length+1}</div><div className="sl">{T('people')}</div></div>
       </div>
 
-      {/* WRAPPED SECTION */}
-      {completions.length>0&&(
+      {/* REEL BUTTON — viral feature */}
+      {photosOnly.length>=2&&(
         <div className="fu f2" style={{marginBottom:20}}>
-          <div className="lbl" style={{marginBottom:12}}>✨ {T('wrappedTitle')}</div>
-          <div style={{display:'flex',flexDirection:'column',gap:10}}>
-            {topPlayer&&(
-              <div className="wrapped-card">
-                <div className="lbl" style={{marginBottom:6}}>{T('topPlayer')}</div>
-                <div className="wrapped-big">{topPlayer[0]}</div>
-                <div style={{fontSize:13,color:'var(--muted)'}}>{topPlayer[1]} {T('tasks_label')}</div>
+          <button onClick={()=>setShowReel(true)} style={{width:'100%',padding:'18px',background:'linear-gradient(135deg,#0F1A00,#1A2800)',border:'2px solid rgba(198,255,0,.3)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:12,transition:'all .2s',position:'relative',overflow:'hidden'}}>
+            <div style={{position:'absolute',inset:0,background:'radial-gradient(ellipse at 60% 50%,rgba(198,255,0,.07) 0%,transparent 70%)'}}/>
+            <span style={{fontSize:28}}>🎬</span>
+            <div style={{textAlign:'left'}}>
+              <div style={{fontFamily:'Syne',fontWeight:800,fontSize:15,color:'var(--lime)'}}>{lang==='de'?'Reel erstellen':'Create Reel'}</div>
+              <div style={{fontSize:12,color:'rgba(239,241,245,.5)',marginTop:2}}>{lang==='de'?`${photosOnly.length} Fotos · Memofox Outro · TikTok/Reels ready`:`${photosOnly.length} photos · Memofox outro · TikTok/Reels ready`}</div>
+            </div>
+            <span style={{marginLeft:'auto',color:'var(--lime)',fontSize:18}}>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* CHAMPION BANNER */}
+      {topPlayer&&(
+        <div className="fu f2" style={{marginBottom:20,background:'linear-gradient(135deg,rgba(255,179,0,.08),rgba(255,179,0,.04))',border:'1px solid rgba(255,179,0,.25)',borderRadius:'var(--r)',padding:'18px 20px',position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-10,right:-10,fontSize:80,opacity:.06}}>🏆</div>
+          <div className="lbl" style={{color:'rgba(255,179,0,.7)',marginBottom:8}}>🏆 {lang==='de'?'Champion des Abends':'Champion of the Night'}</div>
+          <div style={{fontFamily:'Syne',fontWeight:800,fontSize:28,color:'var(--gold)',marginBottom:4}}>{topPlayer[0]}</div>
+          <div style={{fontSize:13,color:'var(--muted)'}}>{topPlayer[1]} {lang==='de'?'Aufgaben erledigt':'tasks completed'}</div>
+        </div>
+      )}
+
+      {showReel&&<ReelGenerator completions={completions} sessionInfo={sessionData} lang={lang} onClose={()=>setShowReel(false)}/>}
+
+      {/* TRICK REVEAL */}
+      {trickCompletions.length>0&&(
+        <div className="fu f2 trick-reveal" style={{marginBottom:20}}>
+          <div className="trick-header">
+            <span style={{fontSize:18}}>🎭</span>
+            <span style={{fontFamily:'Syne',fontWeight:700,fontSize:13,color:'var(--gold)'}}>
+              {lang==='de'?`${trickCompletions.length} Streich${trickCompletions.length>1?'e':''} enthüllt!`:`${trickCompletions.length} prank${trickCompletions.length>1?'s':''} revealed!`}
+            </span>
+          </div>
+          <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:8}}>
+            {trickCompletions.map((c,i)=>(
+              <div key={i} style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>
+                <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname}</strong> — {lang==='de'?'hatte keine Ahnung 😂':'had no idea 😂'}<br/>
+                <span style={{opacity:.7}}>{(c.text||'').split('—')[0]}</span>
               </div>
-            )}
-            {trickCompletions.length>0&&(
-              <div className="trick-reveal">
-                <div className="trick-header">
-                  <span style={{fontSize:18}}>🎭</span>
-                  <span style={{fontFamily:'Syne',fontWeight:700,fontSize:13,color:'var(--gold)'}}>
-                    {lang==='de'?`${trickCompletions.length} Streich${trickCompletions.length>1?'e':''} enthüllt!`:`${trickCompletions.length} prank${trickCompletions.length>1?'s':''} revealed!`}
-                  </span>
-                </div>
-                <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:8}}>
-                  {trickCompletions.map((c,i)=>(
-                    <div key={i} style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>
-                      <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname}</strong> — {lang==='de'?'hatte keine Ahnung 😂':'had no idea 😂'}<br/>
-                      <span style={{opacity:.7}}>{c.text.split('—')[0]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            ))}
           </div>
         </div>
       )}
@@ -1186,7 +1226,7 @@ export default function App(){
         {screen==='setup'&&<SetupScreen key={setupKey} lang={lang} onStart={handleHostStart} onBack={()=>go('home')}/>}
         {screen==='lobby'&&<LobbyScreen lang={lang} sessionCode={sessionCode} sessionId={sessionId} onPlay={()=>go('game')} onBack={()=>go('setup')}/>}
         {screen==='join'&&<JoinScreen lang={lang} prefillCode={prefillCode} onJoined={handleGuestJoined} onBack={()=>go('home')}/>}
-        {screen==='game'&&<GameScreen lang={lang} sessionId={sessionId} sessionCode={sessionCode} myParticipantId={myParticipantId} myNickname={myNickname} myColor={myColor} isHost={isHost} showQRGlobal={showQR} setShowQRGlobal={setShowQR} onEnd={()=>go('end')} onSaveSession={saveSession}/>}
+        {screen==='game'&&<GameScreen lang={lang} sessionId={sessionId} sessionCode={sessionCode} sessionConfig={sessionData?.config} myParticipantId={myParticipantId} myNickname={myNickname} myColor={myColor} isHost={isHost} showQRGlobal={showQR} setShowQRGlobal={setShowQR} onEnd={()=>go('end')} onSaveSession={saveSession}/>}
         {screen==='end'&&<EndScreen lang={lang} sessionId={sessionId} sessionData={sessionData} onHome={()=>{setSessionId(null);setSessionCode(null);setSessionData(null);go('home')}}/>}
         {screen==='history'&&<HistoryScreen lang={lang} onBack={()=>go('home')} onView={s=>{setAlbumId(s.id);setSessionData(s);go('album')}}/>}
       </div>
