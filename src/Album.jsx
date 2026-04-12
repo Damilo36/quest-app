@@ -119,12 +119,11 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
   const quote = getQuote(lang)
 
   const share = async () => {
-    const url = window.location.href
+    const url = `${window.location.origin}?album=${sessionId}`
     if (navigator.share) {
-      try { await navigator.share({ title: 'Memofox Album 🦊', text: lang === 'de' ? 'Schaut euch unser Memofox Album an!' : 'Check out our Memofox album!', url }) } catch (e) {}
-    } else {
-      navigator.clipboard.writeText(url)
+      try { await navigator.share({ title: 'Memofox Album 🦊', text: lang === 'de' ? 'Schaut euch unser Memofox Album an! 30 Tage verfügbar 🦊' : 'Check out our Memofox album! Available for 30 days 🦊', url }); return } catch (e) {}
     }
+    navigator.clipboard.writeText(url)
   }
 
   return (
