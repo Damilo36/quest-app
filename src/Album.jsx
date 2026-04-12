@@ -118,7 +118,26 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
   const noPhotos = completions.filter(c => !c.photo_url)
   const quote = getQuote(lang)
 
-  const share = async () => {
+  const downloadPhoto = async (url, name) => {
+    try {
+      const res = await fetch(url, { mode: 'cors' })
+      const blob = await res.blob()
+      const bUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = bUrl; a.download = name || 'memofox-foto.jpg'; a.click()
+      setTimeout(() => URL.revokeObjectURL(bUrl), 2000)
+    } catch {
+      // Fallback: open in new tab
+      window.open(url, '_blank')
+    }
+  }
+
+  const downloadAll = async () => {
+    for (let i = 0; i < photosOnly.length; i++) {
+      await downloadPhoto(photosOnly[i].photo_url, `memofox-${i + 1}.jpg`)
+      await new Promise(r => setTimeout(r, 400)) // Stagger downloads
+    }
+  }
     const url = `${window.location.origin}?album=${sessionId}`
     if (navigator.share) {
       try { await navigator.share({ title: 'Memofox Album 🦊', text: lang === 'de' ? 'Schaut euch unser Memofox Album an! 30 Tage verfügbar 🦊' : 'Check out our Memofox album! Available for 30 days 🦊', url }); return } catch (e) {}
@@ -134,6 +153,7 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
       {lightbox && (
         <div className="lightbox" onClick={() => setLightbox(null)}>
           <button className="lb-close" onClick={() => setLightbox(null)}>✕</button>
+          <button onClick={() => downloadPhoto(lightbox.url, 'memofox-foto.jpg')} style={{ position: 'absolute', top: 20, right: 72, width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s' }}>💾</button>
           <img className="lb-img" src={lightbox.url} alt="" onClick={e => e.stopPropagation()} />
           <div className="lb-caption">{lightbox.caption}</div>
         </div>
@@ -176,9 +196,14 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
           </div>
 
           {/* Share button */}
-          <button className="btn bp" onClick={share} style={{ maxWidth: 400, marginBottom: 28, padding: '13px' }}>
+          <button className="btn bp" onClick={share} style={{ maxWidth: 400, marginBottom: 10, padding: '13px' }}>
             📤 {lang === 'de' ? 'Album teilen' : 'Share Album'}
           </button>
+          {photosOnly.length > 0 && (
+            <button onClick={downloadAll} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 20px', background: 'var(--s2)', border: '1px solid var(--bdr2)', borderRadius: 'var(--rs)', color: 'var(--muted)', fontSize: 13, fontFamily: 'Syne', fontWeight: 600, cursor: 'pointer', marginBottom: 28, width: '100%', maxWidth: 400, transition: 'all .2s' }}>
+              💾 {lang === 'de' ? `Alle ${photosOnly.length} Fotos herunterladen` : `Download all ${photosOnly.length} photos`}
+            </button>
+          )}
 
           {/* Photos */}
           {photosOnly.length > 0 ? (
@@ -191,6 +216,11 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
                       <img src={c.photo_url} alt={c.text} />
                       <div className="mem-tag">{c.claimed_by_nickname || 'Anonym'}</div>
                       {c.is_trick && <div className="trick-badge">🎭 {lang === 'de' ? 'Streich' : 'Prank'}</div>}
+                      {/* Download button */}
+                      <button
+                        onClick={e => { e.stopPropagation(); downloadPhoto(c.photo_url, `memofox-${c.claimed_by_nickname || 'foto'}.jpg`) }}
+                        style={{ position: 'absolute', bottom: 10, right: 10, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,.65)', border: '1px solid rgba(255,255,255,.2)', color: 'white', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+                      >💾</button>
                     </div>
                     <div style={{ padding: '13px 16px' }}>
                       <div style={{ fontSize: 11, color: 'var(--lime)', fontFamily: 'Syne', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 5 }}>{c.claimed_by_nickname || 'Anonym'}</div>
