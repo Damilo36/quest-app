@@ -624,8 +624,16 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
 
   const cancelTask=async()=>{
     if(!activeId)return
-    await supabase.from('tasks').update({status:'open',claimed_by:null,claimed_by_nickname:null}).eq('id',activeId).eq('claimed_by',myParticipantId)
-    setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
+    // Update without claimed_by condition — just reset by ID
+    const{error}=await supabase.from('tasks')
+      .update({status:'open',claimed_by:null,claimed_by_nickname:null})
+      .eq('id',activeId)
+    if(!error){
+      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
+    } else {
+      // Force local reset even if DB update failed
+      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
+    }
     setActiveId(null);setPhase('list')
   }
 
