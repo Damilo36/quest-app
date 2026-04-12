@@ -8,6 +8,7 @@ export const OCCASIONS = [
   {id:'wedding',  icon:'💍', label:{de:'Hochzeit',      en:'Wedding'}},
   {id:'jga',      icon:'🕺', label:{de:'JGA / JGE',     en:'Bachelor/ette'}},
   {id:'office',   icon:'🏢', label:{de:'Büroparty',     en:'Office Party'}},
+  {id:'meet',     icon:'💛', label:{de:'Kennenlernen',   en:'Meet & Connect'}},
 ]
 
 export const VIBES = [
@@ -711,3 +712,59 @@ export function getQuote(lang = 'de') {
   const pool = QUOTES[lang] || QUOTES.de
   return pool[Math.floor(Math.random() * pool.length)]
 }
+
+// ─── KENNENLERNEN TASKS (appended) ───────────────────────────────────────────
+// Added to OCCASION_TASKS object — same structure
+Object.assign(OCCASION_TASKS, {
+  meet_family: [
+    {e:'👋', t:{de:'Finde jemanden der denselben Lieblingsfilm hat wie du — Beweis-Selfie', en:'Find someone with the same favorite movie as you — proof selfie'}},
+    {e:'🌍', t:{de:'Wer war am weitesten weg von hier? Zeigt es auf einer improvisierten Karte', en:'Who has been furthest from here? Show it on an improvised map'}},
+    {e:'🎂', t:{de:'Finde jemanden der im selben Monat Geburtstag hat wie du — foto beider', en:'Find someone born in the same month as you — photo of both'}},
+    {e:'🎵', t:{de:'Was ist der Song der dich am meisten an deine Kindheit erinnert? Sing 5 Sekunden — foto der Reaktion', en:'What song reminds you most of your childhood? Sing 5 seconds — photo of the reaction'}},
+    {e:'🌱', t:{de:'Lerne von 3 verschiedenen Personen je einen Fakt über sie den du nicht wusstest', en:'Learn one fact from 3 different people that you didn\'t know about them'}},
+    {e:'🍕', t:{de:'Finde jemanden mit demselben Lieblingsessen wie du — foto beider mit dem Essen', en:'Find someone with the same favorite food as you — photo of both with the food'}},
+    {e:'🐾', t:{de:'Wer hat hier ein Haustier? Zeige ein Foto — und lass es dir erklären', en:'Who here has a pet? Show a photo — and let them explain it to you'}},
+    {e:'🏡', t:{de:'Finde jemanden der aus derselben Stadt oder Region kommt — foto beider', en:'Find someone from the same city or region — photo of both'}},
+    {e:'📚', t:{de:'Was ist das beste Buch das du je gelesen hast? Erkläre es in 20 Sekunden — foto der Zuhörer', en:'What\'s the best book you\'ve ever read? Explain it in 20 seconds — photo of the listeners'}},
+    {e:'🌙', t:{de:'Finde jemanden der mehr Länder bereist hat als du — lass dir dein Lieblingsland erzählen', en:'Find someone who has traveled to more countries than you — let them tell you their favorite'}},
+    {e:'🎯', t:{de:'Was ist dein verstecktes Talent? Zeige es — foto der überraschten Gesichter', en:'What is your hidden talent? Show it — photo of the surprised faces'}},
+    {e:'💬', t:{de:'Führe mit jemandem den du nicht kennst ein 2-Minuten echtes Gespräch — foto danach', en:'Have a 2-minute genuine conversation with someone you don\'t know — photo after'}},
+    {e:'🤫', t:{de:'STREICH: Überzeuge jemanden ihr hättet "eine gemeinsame Bekannte" — foto sein Gesicht wenn er merkt dass du es erfunden hast', en:'PRANK: Convince someone you have "a mutual friend" — photo their face when they realize you made it up'}, trick:true},
+    {e:'🌸', t:{de:'Was ist das Schönste das du je gesehen hast? Beschreibe es in Gesten — die anderen raten', en:'What\'s the most beautiful thing you\'ve ever seen? Describe it in gestures — others guess'}},
+    {e:'✨', t:{de:'Finde die Person die du heute am interessantesten findest — mach ein Foto und erkläre warum', en:'Find the person you find most interesting today — take a photo and explain why'}},
+  ],
+  meet_chill: [
+    {e:'💛', t:{de:'Capture den Moment wenn zwei Fremde zum ersten Mal wirklich lachen — ungeplant', en:'Capture the moment when two strangers first genuinely laugh — unplanned'}},
+    {e:'🌊', t:{de:'Finde jemanden der gerade in einem echten Gespräch versunken ist — foto ohne zu stören', en:'Find someone genuinely absorbed in a real conversation — photo without disturbing'}},
+    {e:'☕', t:{de:'Was trinkt jeder gerade? Foto aller Getränke — jeder steht dahinter', en:'What is everyone drinking right now? Photo of all drinks — everyone stands behind theirs'}},
+    {e:'🎨', t:{de:'Zeichne in 60 Sekunden jemanden den du gerade erst kennengelernt hast', en:'Draw in 60 seconds someone you\'ve just met'}},
+    {e:'🌙', t:{de:'Finde den ruhigsten Moment des Abends und halte ihn fest', en:'Find the quietest moment of the evening and capture it'}},
+    {e:'💭', t:{de:'Stell jemand Neuem 3 Fragen die du immer stellen möchtest aber nie traust — foto beim Antworten', en:'Ask someone new 3 questions you always want to ask but never dare — photo while answering'}},
+    {e:'🌺', t:{de:'Wer hat heute Abend die interessanteste Geschichte? Lass sie dir erzählen', en:'Who has the most interesting story tonight? Let them tell it to you'}},
+    {e:'📸', t:{de:'STREICH: Bitte jemanden Neues für ein "Erinnerungsfoto" — mach es genau wenn er nicht bereit ist', en:'PRANK: Ask someone new for a "memory photo" — take it exactly when they\'re not ready'}, trick:true},
+    {e:'🦋', t:{de:'Was hat die Person neben dir heute Besonderes erlebt? Frage sie — foto beim Erzählen', en:'What special thing did the person next to you experience today? Ask them — photo while telling'}},
+    {e:'🎭', t:{de:'Finde jemanden der eine Leidenschaft hat die du noch nie ausprobiert hast — lass sie kurz darstellen', en:'Find someone with a passion you\'ve never tried — let them briefly demonstrate it'}},
+    {e:'🌿', t:{de:'Capture einen echten ungestellten Moment zwischen zwei Menschen die sich gerade kennenlernen', en:'Capture a genuine unposed moment between two people just getting to know each other'}},
+    {e:'✨', t:{de:'Das Foto das zeigt wie sich dieser Abend anfühlt', en:'The photo that shows how this evening feels'}},
+    {e:'💌', t:{de:'Schreibe 3 Wörter die dich beschreiben auf einen Zettel — tausche mit jemandem — foto beider Zettel', en:'Write 3 words that describe you on a note — swap with someone — photo of both notes'}},
+    {e:'🌅', t:{de:'Finde das beste Licht des Abends und mach damit ein Porträt von jemandem Neuen', en:'Find the best light of the evening and use it for a portrait of someone new'}},
+    {e:'🎯', t:{de:'Was haben du und eine fremde Person unerwartet gemeinsam? Findet es heraus — foto des Moments', en:'What do you and a stranger unexpectedly have in common? Find out — photo of the moment'}},
+  ],
+  meet_party: [
+    {e:'🎯', t:{de:'Überzeuge 3 Fremde je eine Sache über sich zu verraten die noch niemand hier weiß — foto ihre Gesichter', en:'Convince 3 strangers to each reveal one thing about themselves nobody here knows — photo their faces'}},
+    {e:'🕺', t:{de:'Tanz-Challenge mit jemandem den du gerade erst kennengelernt hast — 20 Sekunden', en:'Dance challenge with someone you just met — 20 seconds'}},
+    {e:'🎤', t:{de:'Freestyle-Intro: Stelle dich in 8 Zeilen Rap einem Fremden vor — foto seine Reaktion', en:'Freestyle intro: introduce yourself in 8 lines of rap to a stranger — photo their reaction'}},
+    {e:'🏆', t:{de:'"Wer bin ich?": Alle schreiben einen Namen auf Papier und halten es an ihre Stirn — jeder rät', en:'"Who am I?": Everyone writes a name on paper and holds it to their forehead — everyone guesses'}},
+    {e:'🤝', t:{de:'Erfinde mit jemandem den du gerade kennengelernt hast einen einzigartigen Handshake in 2 Minuten', en:'Invent a unique handshake in 2 minutes with someone you just met'}},
+    {e:'📞', t:{de:'Überzeuge jemanden Neues dich bei einem gemeinsamen Freund als "besten Kumpel" vorzustellen', en:'Convince someone new to introduce you to a mutual friend as "best buddy"'}},
+    {e:'🎭', t:{de:'Imitiere jemanden den du gerade erst kennengelernt hast — er muss sich selbst erkennen', en:'Imitate someone you just met — they must recognize themselves'}},
+    {e:'🌟', t:{de:'Wer kann in 3 Minuten die meisten neuen Namen lernen? Beweis durch Aufsagen', en:'Who can learn the most new names in 3 minutes? Proof by reciting them'}},
+    {e:'🤫', t:{de:'STREICH: Überzeuge jemanden Neues ihr kennt euch "schon von früher" — wie lange hält er das Spiel mit?', en:'PRANK: Convince someone new you "already know each other from before" — how long do they play along?'}, trick:true},
+    {e:'🎲', t:{de:'Finde jemanden und wettet auf etwas — wer verliert macht eine Aufgabe der Anderen', en:'Find someone and make a bet on something — who loses does a task from the other'}},
+    {e:'💃', t:{de:'Überzeuge die gesamte Gruppe einen spontanen Synchrontanz zu machen — alle gleichzeitig', en:'Convince the entire group to do a spontaneous synchronized dance — all simultaneously'}},
+    {e:'🎪', t:{de:'Organisiere ein spontanes "Wer ist wer?" Spiel — alle imitieren jemanden — Gruppe rät', en:'Organize a spontaneous "who is who?" game — everyone imitates someone — group guesses'}},
+    {e:'📸', t:{de:'STREICH: Überzeuge jemanden es gebe einen "Fotowettbewerb" für den er sofort posieren soll', en:'PRANK: Convince someone there\'s a "photo contest" they should pose for immediately'}, trick:true},
+    {e:'🌈', t:{de:'Erstelle eine spontane "Kennenlern-Pyramide": Du überzeugst 2, die 2 überzeugen 4 — foto der Gruppe', en:'Create a spontaneous "meet and greet pyramid": you convince 2, they convince 4 — photo of the group'}},
+    {e:'🥂', t:{de:'Toast auf alle Anwesenden — jeder sagt dabei etwas über die Person zu seiner Rechten die er gerade gelernt hat', en:'Toast to everyone present — each person says something about the person to their right they just learned'}},
+  ],
+})
