@@ -294,7 +294,7 @@ function SetupScreen({lang,onStart,onBack}){
 
   const handleStart=async()=>{
     setLoading(true);setErr('')
-    try{await onStart({occ,vibe,count,multi,customTasks:customTasks.filter(t=>t.trim())})}
+    try{await onStart({occ,vibe,count,customTasks:customTasks.filter(t=>t.trim())})}
     catch(e){setErr(e.message||'Error');console.error(e)}
     setLoading(false)
   }
@@ -361,22 +361,12 @@ function SetupScreen({lang,onStart,onBack}){
         {step===4&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>{T('rules')}</div>
           <p className="fu f1" style={{color:'var(--muted)',marginBottom:22,fontSize:14}}>{T('rulesSub')}</p>
-          <div className="card fu f2" style={{marginBottom:12}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 0'}}>
-              <div style={{paddingRight:16}}>
-                <div style={{fontWeight:500,fontSize:14,marginBottom:3}}>{T('multipleAllowed')}</div>
-                <div style={{fontSize:12,color:'var(--muted)'}}>{T('multipleDesc')}</div>
-              </div>
-              <label className="tog"><input type="checkbox" checked={multi} onChange={e=>setMulti(e.target.checked)}/><span className="tsl"/></label>
-            </div>
-          </div>
-          <div className="card fu f3" style={{padding:'14px 18px'}}>
+          <div className="card fu f2" style={{padding:'14px 18px'}}>
             <div className="lbl" style={{marginBottom:11}}>{T('summary')}</div>
             {[
               {l:T('occasion'),v:(OCCASIONS.find(o=>o.id===occ)||{icon:'—',label:{de:'—',en:'—'}}).icon+' '+(typeof(OCCASIONS.find(o=>o.id===occ)||{label:{de:'—',en:'—'}}).label==='object'?(OCCASIONS.find(o=>o.id===occ)||{label:{de:'—'}}).label[lang]||(OCCASIONS.find(o=>o.id===occ)||{label:{de:'—'}}).label.de:'—')},
               {l:T('vibe'),v:(VIBES.find(v=>v.id===vibe)||{icon:'—',label:{de:'—',en:'—'}}).icon+' '+(typeof(VIBES.find(v=>v.id===vibe)||{label:{de:'—',en:'—'}}).label==='object'?(VIBES.find(v=>v.id===vibe)||{label:{de:'—'}}).label[lang]||(VIBES.find(v=>v.id===vibe)||{label:{de:'—'}}).label.de:'—')},
               {l:T('tasks'),v:`${count} + ⭐`},
-              {l:T('multiple'),v:multi?T('yes'):T('no')},
             ].map(row=>(
               <div key={row.l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--bdr)',fontSize:13}}>
                 <span style={{color:'var(--muted)'}}>{row.l}</span><span style={{fontWeight:500}}>{row.v}</span>
@@ -588,7 +578,7 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   const fileRef=useRef()
   const cameraRef=useRef()
   const{toasts,add}=useToast()
-  const multiAllowed=sessionConfig?.multi||false
+  const multiAllowed=false // Feature removed
 
   useEffect(()=>{
     if(!sessionId)return
@@ -599,11 +589,11 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
         p=>{
           setTasks(prev=>{
             const updated=prev.map(t=>t.id===p.new.id?p.new:t)
-            if(updated.every(t=>t.status==='done'||t.status==='done_multi'))setTimeout(()=>setAllDone(true),500)
+            if(updated.every(t=>t.status==='done'))setTimeout(()=>setAllDone(true),500)
             return updated
           })
           if(p.new.status==='done'&&p.new.claimed_by!==myParticipantId)
-            add(`${p.new.claimed_by_nickname||'?'} ${T('completedMsg',p.new.text||'')}`,avatarLetter(p.new.claimed_by_nickname||'?'),'#C6FF00')
+            add(`${p.new.claimed_by_nickname||'?'}: ${(p.new.text||'').slice(0,30)}…`,avatarLetter(p.new.claimed_by_nickname||'?'),'#C6FF00')
         })
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'participants',filter:`session_id=eq.${sessionId}`},
         p=>{setParts(prev=>[...prev,p.new]);add(T('joinedMsg',p.new.nickname),avatarLetter(p.new.nickname),p.new.avatar_color||'#C6FF00')})
@@ -616,27 +606,26 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   const myActive=tasks.find(t=>t.claimed_by===myParticipantId&&t.status==='active')
 
   const pickTask=async(task)=>{
-    // Multi-allowed: done tasks can be picked again; single: only open tasks
-    const canPick=multiAllowed
-      ?(task.status==='open'||task.status==='done')&&!myActive
-      :task.status==='open'&&!myActive
-    if(!canPick)return
+    if(task.status!=='open'||myActive)return
+    // Optimistic update
     setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}:t))
     setActiveId(task.id);setPhase('active')
-    const{data,error}=await supabase.from('tasks').update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}).eq('id',task.id).select().single()
+    // Atomic update — only succeeds if still open
+    const{data,error}=await supabase.from('tasks')
+      .update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname})
+      .eq('id',task.id).eq('status','open').select().single()
     if(error||!data){
+      // Race condition — someone else got it first
       setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
       setActiveId(null);setPhase('list')
+      add(lang==='de'?'Aufgabe bereits vergeben — wähle eine andere':'Task taken — choose another','!','#FF4040')
     }
   }
 
   const cancelTask=async()=>{
     if(!activeId)return
-    // Restore previous status
-    const task=tasks.find(t=>t.id===activeId)
-    const prevStatus=multiAllowed&&task?.times_done>0?'done':'open'
-    await supabase.from('tasks').update({status:prevStatus,claimed_by:null,claimed_by_nickname:null}).eq('id',activeId)
-    setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:prevStatus,claimed_by:null,claimed_by_nickname:null}:t))
+    await supabase.from('tasks').update({status:'open',claimed_by:null,claimed_by_nickname:null}).eq('id',activeId).eq('claimed_by',myParticipantId)
+    setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
     setActiveId(null);setPhase('list')
   }
 
@@ -653,13 +642,17 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
         photoUrl=publicUrl
       }
       const task=tasks.find(t=>t.id===activeId)
-      const newStatus=multiAllowed?'open':'done'
-      await supabase.from('tasks').update({status:newStatus,photo_url:photoUrl,completed_at:new Date().toISOString(),claimed_by:null,claimed_by_nickname:null}).eq('id',activeId)
-      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:newStatus,photo_url:photoUrl,claimed_by:null,claimed_by_nickname:null}:t))
+      await supabase.from('tasks').update({
+        status:'done',photo_url:photoUrl,
+        completed_at:new Date().toISOString(),
+        claimed_by:myParticipantId,
+        claimed_by_nickname:myNickname
+      }).eq('id',activeId)
+      setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'done',photo_url:photoUrl,claimed_by_nickname:myNickname}:t))
       const ns=streak+1;setStreak(ns)
-      add(ns>=3?T('streakMsg',ns):T('completedMsg',(task?.text||'').slice(0,26)),'✓',myColor||'#C6FF00')
+      add(ns>=3?T('streakMsg',ns):T('completedMsg',(task?.text||'').slice(0,26)),avatarLetter(myNickname),myColor||'#C6FF00')
       setActiveId(null);setPhase('list')
-    }catch(e){console.error(e)}
+    }catch(e){console.error(e);add(lang==='de'?'Upload fehlgeschlagen':'Upload failed','✗','#FF4040')}
     setUploading(false)
   }
 
@@ -720,15 +713,13 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
         {tasks.map((task,idx)=>{
           const isMyAct=task.claimed_by===myParticipantId&&task.status==='active'
           const isOtherAct=task.status==='active'&&task.claimed_by!==myParticipantId
-          const isDone=task.status==='done'&&!multiAllowed
-          const isDoneMulti=task.status==='done'&&multiAllowed // in multi mode: show as done but still clickable
+          const isDone=task.status==='done'
           const hasMyAct=!!myActive
-          const canClick=(task.status==='open'||(multiAllowed&&task.status==='done'))&&!hasMyAct
           return(
             <div key={task.id}
               className={`tc ${isDone?'tdone':''} ${isOtherAct?'tlock':''} ${task.is_golden&&!isDone?'tgold':''} ${isMyAct?'tact':''}`}
-              onClick={()=>canClick?pickTask(task):null}
-              style={{cursor:canClick?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`,opacity:isDoneMulti?0.6:1}}>
+              onClick={()=>task.status==='open'&&!hasMyAct?pickTask(task):null}
+              style={{cursor:task.status==='open'&&!hasMyAct?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`}}>
               {task.is_golden&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cg" style={{fontSize:10,padding:'3px 8px'}}>{T('goldenTask')}</span></div>}
               {task.is_custom&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>{T('customTask')}</span></div>}
               <div style={{display:'flex',alignItems:'flex-start',gap:13}}>
@@ -737,8 +728,7 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
                   <div style={{fontSize:13,fontWeight:500,lineHeight:1.45,marginBottom:7,textDecoration:isDone?'line-through':'none',color:isDone?'var(--muted)':'var(--white)'}}>{task.text}</div>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                     <span className="chip" style={{fontSize:10,padding:'3px 8px'}}>{T('photo')}</span>
-                    {isDone&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>{T('done')} {task.claimed_by_nickname||''}</span>}
-                    {isDoneMulti&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>✓ {task.claimed_by_nickname} · {lang==='de'?'nochmal möglich':'repeatable'}</span>}
+                    {isDone&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>✓ {task.claimed_by_nickname||''}</span>}
                     {isOtherAct&&<span className="chip cr" style={{fontSize:10,padding:'3px 8px'}}>{T('locked')} {task.claimed_by_nickname}</span>}
                     {isMyAct&&<span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>{T('myTurn')}</span>}
                   </div>
@@ -910,11 +900,11 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
   const photosOnly=completions.filter(c=>c.photo_url)
   const trickCompletions=completions.filter(c=>c.is_trick)
 
-  // Wrapped stats
+  // Wrapped stats — only count entries with real nicknames
   const playerStats={}
   completions.forEach(c=>{
-    const n=c.claimed_by_nickname||'?'
-    playerStats[n]=(playerStats[n]||0)+1
+    const n=c.claimed_by_nickname
+    if(n&&n.trim()&&n!=='?')playerStats[n]=(playerStats[n]||0)+1
   })
   const topPlayer=Object.entries(playerStats).sort((a,b)=>b[1]-a[1])[0]
 
@@ -953,7 +943,7 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
       )}
 
       {/* CHAMPION BANNER */}
-      {topPlayer&&(
+      {topPlayer&&topPlayer[0]&&(
         <div className="fu f2" style={{marginBottom:20,background:'linear-gradient(135deg,rgba(255,179,0,.08),rgba(255,179,0,.04))',border:'1px solid rgba(255,179,0,.25)',borderRadius:'var(--r)',padding:'18px 20px',position:'relative',overflow:'hidden'}}>
           <div style={{position:'absolute',top:-10,right:-10,fontSize:80,opacity:.06}}>🏆</div>
           <div className="lbl" style={{color:'rgba(255,179,0,.7)',marginBottom:8}}>🏆 {lang==='de'?'Champion des Abends':'Champion of the Night'}</div>
@@ -964,20 +954,24 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
 
       {showReel&&<ReelGenerator completions={completions} sessionInfo={sessionData} lang={lang} onClose={()=>setShowReel(false)}/>}
 
-      {/* TRICK REVEAL */}
-      {trickCompletions.length>0&&(
+      {/* TRICK REVEAL — only if photo exists */}
+      {trickCompletions.filter(c=>c.photo_url).length>0&&(
         <div className="fu f2 trick-reveal" style={{marginBottom:20}}>
           <div className="trick-header">
             <span style={{fontSize:18}}>🎭</span>
             <span style={{fontFamily:'Syne',fontWeight:700,fontSize:13,color:'var(--gold)'}}>
-              {lang==='de'?`${trickCompletions.length} Streich${trickCompletions.length>1?'e':''} enthüllt!`:`${trickCompletions.length} prank${trickCompletions.length>1?'s':''} revealed!`}
+              {lang==='de'?`${trickCompletions.filter(c=>c.photo_url).length} Streich${trickCompletions.filter(c=>c.photo_url).length>1?'e':''} enthüllt!`:`${trickCompletions.filter(c=>c.photo_url).length} prank${trickCompletions.filter(c=>c.photo_url).length>1?'s':''} revealed!`}
             </span>
           </div>
-          <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:8}}>
-            {trickCompletions.map((c,i)=>(
-              <div key={i} style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>
-                <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname}</strong> — {lang==='de'?'hatte keine Ahnung 😂':'had no idea 😂'}<br/>
-                <span style={{opacity:.7}}>{(c.text||'').split('—')[0]}</span>
+          <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:12}}>
+            {trickCompletions.filter(c=>c.photo_url).map((c,i)=>(
+              <div key={i}>
+                <div style={{borderRadius:12,overflow:'hidden',aspectRatio:'4/3',marginBottom:8}}>
+                  <img src={c.photo_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                </div>
+                <div style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>
+                  <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname||'Anonym'}</strong> — {lang==='de'?'hatte keine Ahnung 😂':'had no idea 😂'}
+                </div>
               </div>
             ))}
           </div>
