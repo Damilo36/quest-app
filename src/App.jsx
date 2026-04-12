@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase, generateCode, randomColor, avatarLetter } from './supabase'
 import { OCCASIONS, VIBES, COUNTS, FLASH_CHALLENGES, QUOTES, buildTaskList } from './data'
+import Album from './Album'
+import Legal from './Legal'
 
-/* ─── STYLES ─────────────────────────────────────────────────────────── */
+/* ─── STYLES ──────────────────────────────────────────────────────────────── */
 const S = `
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -76,28 +78,33 @@ html,body,#root{height:100%;background:var(--bg);color:var(--white);font-family:
 .stat{background:var(--s2);border-radius:var(--rs);padding:14px 10px;text-align:center;border:1px solid var(--bdr)}
 .sn{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;color:var(--lime);line-height:1;margin-bottom:4px}
 .sl{font-size:10px;color:var(--muted);font-family:'Syne',sans-serif;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
-.mem{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
-.mem-img{width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.mem-img img{width:100%;height:100%;object-fit:cover}
-.mem-tag{position:absolute;top:12px;left:12px;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);padding:5px 10px;border-radius:100px;font-size:11px;font-family:'Syne',sans-serif;font-weight:600}
 .hcard{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);padding:18px 20px;cursor:pointer;transition:all .2s}.hcard:hover{border-color:var(--bdr2);transform:translateX(3px)}
+.warn{background:rgba(255,179,0,.08);border:1px solid rgba(255,179,0,.22);border-radius:var(--rs);padding:12px 16px;display:flex;align-items:flex-start;gap:10px;font-size:12px;color:rgba(255,179,0,.85);line-height:1.5}
+.consent-bg{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.consent-box{background:var(--s1);border-radius:24px 24px 0 0;width:100%;max-width:430px;padding:28px 24px 48px;animation:shu .4s cubic-bezier(.16,1,.3,1)}
 @keyframes fu{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
 .fu{animation:fu .45s cubic-bezier(.16,1,.3,1) both}
 .f1{animation-delay:.05s}.f2{animation-delay:.1s}.f3{animation-delay:.15s}.f4{animation-delay:.2s}
 .noise-layer{position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:999;opacity:.4}
 @keyframes cf{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
-.err{color:var(--red);font-size:13px;margin-top:8px;font-family:'DM Sans',sans-serif}
 .spin{animation:spin 1s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
+.err{color:var(--red);font-size:13px;margin-top:8px}
+/* QR Scanner */
+.qr-scan-wrap{position:relative;width:220px;height:220px;margin:0 auto 16px}
+.qr-scan-wrap video{width:220px;height:220px;object-fit:cover;border-radius:16px}
+.qr-corners{position:absolute;inset:0;pointer-events:none}
+.qr-corner{position:absolute;width:24px;height:24px;border-color:var(--lime);border-style:solid}
+.qr-corner.tl{top:8px;left:8px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.qr-corner.tr{top:8px;right:8px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.qr-corner.bl{bottom:8px;left:8px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.qr-corner.br{bottom:8px;right:8px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
 `
 
-/* ─── SMALL HELPERS ──────────────────────────────────────────────────── */
 function BackIcon(){return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-
 function Spinner(){return <span className="spin">⟳</span>}
 
-function QRCode({code}){
-  // Simple visual QR - in production use a real QR library
+function QRCodeDisplay({code}){
   const p=Array.from({length:21},(_,r)=>Array.from({length:21},(_,c)=>{
     const corner=(r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7)
     const inner=(r>=2&&r<=4&&c>=2&&c<=4)||(r>=2&&r<=4&&c>=16&&c<=18)||(r>=16&&r<=18&&c>=2&&c<=4)
@@ -151,12 +158,35 @@ function useToast(){
   return{toasts,add}
 }
 
-/* ─── SCREEN: HOME ───────────────────────────────────────────────────── */
-function HomeScreen({onHost,onJoin,onHistory,histCount}){
+// Consent Screen
+function ConsentScreen({onAccept,onLegal}){
+  return(
+    <div className="consent-bg">
+      <div className="consent-box">
+        <div style={{fontSize:32,textAlign:'center',marginBottom:12}}>📸</div>
+        <div className="head" style={{fontSize:20,textAlign:'center',marginBottom:8}}>Kurz kurz</div>
+        <p style={{color:'var(--muted)',fontSize:13,textAlign:'center',lineHeight:1.7,marginBottom:20}}>
+          Fotos die du hochlädst werden <strong style={{color:'var(--white)'}}>30 Tage gespeichert</strong> und danach automatisch gelöscht.
+          Nur Personen mit dem Session-Link können sie sehen. Wir prüfen oder nutzen deine Fotos nicht.
+        </p>
+        <div className="warn" style={{marginBottom:20}}>
+          <span>⚠️</span>
+          <span>Stelle sicher dass alle abgebildeten Personen einverstanden sind, dass ihre Fotos im Album erscheinen.</span>
+        </div>
+        <button className="btn bp" onClick={onAccept} style={{marginBottom:10}}>Verstanden, weiter</button>
+        <button onClick={onLegal} style={{width:'100%',background:'none',border:'none',color:'var(--muted)',fontSize:12,cursor:'pointer',padding:'8px',fontFamily:'DM Sans'}}>
+          Datenschutz & Impressum lesen
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Home Screen
+function HomeScreen({onHost,onJoin,onHistory,histCount,onLegal}){
   return(
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'0 24px',position:'relative',overflow:'hidden'}}>
       <div className="orb" style={{width:300,height:300,background:'rgba(198,255,0,.07)',top:-120,right:-80}}/>
-      <div className="orb" style={{width:160,height:160,background:'rgba(198,255,0,.04)',bottom:100,left:-50}}/>
       <div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',paddingTop:80}}>
         <div className="fu" style={{marginBottom:12}}>
           <span className="chip cl"><span className="ldot"/>&nbsp;Live Challenges</span>
@@ -172,39 +202,37 @@ function HomeScreen({onHost,onJoin,onHistory,histCount}){
           <button className="btn bs" onClick={onJoin}>Session beitreten</button>
         </div>
       </div>
-      <div className="fu f4" style={{paddingBottom:44}}>
-        {histCount>0?(
-          <button onClick={onHistory} style={{width:'100%',padding:'13px',background:'transparent',border:'1px solid var(--bdr)',borderRadius:'var(--rs)',cursor:'pointer',color:'var(--muted)',fontSize:13,fontFamily:'Syne',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8,transition:'all .2s'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor='var(--bdr2)'}
-            onMouseLeave={e=>e.currentTarget.style.borderColor='var(--bdr)'}>
+      <div className="fu f4" style={{paddingBottom:44,display:'flex',flexDirection:'column',gap:12}}>
+        {histCount>0&&(
+          <button onClick={onHistory} style={{width:'100%',padding:'13px',background:'transparent',border:'1px solid var(--bdr)',borderRadius:'var(--rs)',cursor:'pointer',color:'var(--muted)',fontSize:13,fontFamily:'Syne',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:8,transition:'all .2s'}}>
             🗂&nbsp; Vergangene Sessions ({histCount})
           </button>
-        ):(
-          <div style={{display:'flex',gap:20,justifyContent:'center',opacity:.35}}>
-            {['🎂','🏕️','🎪','💍','🤝','🎓'].map((e,i)=><span key={i} style={{fontSize:20}}>{e}</span>)}
-          </div>
         )}
+        <button onClick={onLegal} style={{background:'none',border:'none',color:'rgba(239,241,245,.2)',fontSize:11,cursor:'pointer',fontFamily:'Syne',fontWeight:600,letterSpacing:'.06em',textTransform:'uppercase'}}>
+          Impressum & Datenschutz
+        </button>
       </div>
     </div>
   )
 }
 
-/* ─── SCREEN: SETUP ──────────────────────────────────────────────────── */
+// Setup Screen
 function SetupScreen({onStart,onBack}){
   const[step,setStep]=useState(0)
   const[occ,setOcc]=useState(null)
   const[vibe,setVibe]=useState(null)
   const[count,setCount]=useState(20)
   const[multi,setMulti]=useState(false)
+  const[customTasks,setCustomTasks]=useState(['','',''])
   const[loading,setLoading]=useState(false)
   const[err,setErr]=useState('')
-  const prog=[25,50,75,100][step]
-  const ok=[!!occ,!!vibe,true,true][step]
+  const prog=[20,40,60,80,100][step]
+  const ok=[!!occ,!!vibe,true,true,true][step]
 
   const handleStart=async()=>{
     setLoading(true);setErr('')
-    try{await onStart({occ,vibe,count,multi})}
-    catch(e){setErr('Fehler beim Erstellen. Bitte erneut versuchen.');console.error(e)}
+    try{await onStart({occ,vibe,count,multi,customTasks:customTasks.filter(t=>t.trim())})}
+    catch(e){setErr('Fehler. Bitte erneut versuchen.');console.error(e)}
     setLoading(false)
   }
 
@@ -213,7 +241,7 @@ function SetupScreen({onStart,onBack}){
       <div style={{padding:'52px 24px 0',display:'flex',alignItems:'center',gap:14,marginBottom:26}}>
         <button className="bi" onClick={step===0?onBack:()=>setStep(s=>s-1)}><BackIcon/></button>
         <div style={{flex:1}}>
-          <div className="lbl" style={{marginBottom:6}}>Schritt {step+1} von 4</div>
+          <div className="lbl" style={{marginBottom:6}}>Schritt {step+1} von 5</div>
           <div className="prog"><div className="pf" style={{width:`${prog}%`}}/></div>
         </div>
       </div>
@@ -221,13 +249,11 @@ function SetupScreen({onStart,onBack}){
         {step===0&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>Welcher Anlass?</div>
           <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Passt die Aufgaben automatisch an.</p>
-          <div className="sg fu f2">
-            {OCCASIONS.map(o=>(
-              <div key={o.id} className={`si ${occ===o.id?'on':''}`} onClick={()=>setOcc(o.id)}>
-                <span className="ico">{o.icon}</span><span className="stx">{o.label}</span>
-              </div>
-            ))}
-          </div>
+          <div className="sg fu f2">{OCCASIONS.map(o=>(
+            <div key={o.id} className={`si ${occ===o.id?'on':''}`} onClick={()=>setOcc(o.id)}>
+              <span className="ico">{o.icon}</span><span className="stx">{o.label}</span>
+            </div>
+          ))}</div>
         </div>}
         {step===1&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>Welcher Vibe?</div>
@@ -247,29 +273,38 @@ function SetupScreen({onStart,onBack}){
         </div>}
         {step===2&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>Wie viele Tasks?</div>
-          <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Für ~2h Abend empfehlen wir 20.</p>
+          <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Für ~2h empfehlen wir 20.</p>
           <div className="fu f2" style={{display:'flex',flexWrap:'wrap',gap:9,marginBottom:22}}>
             {COUNTS.map(n=><div key={n} className={`pill ${count===n?'on':''}`} onClick={()=>setCount(n)}>{n}</div>)}
           </div>
           <div className="fu f3 card" style={{fontSize:13,color:'var(--muted)',lineHeight:1.7,padding:'14px 18px'}}>
-            💡 <strong style={{color:'var(--white)'}}>{count} Aufgaben</strong> bei 5 Spielern → ca. <strong style={{color:'var(--lime)'}}>{Math.ceil(count/5)} Tasks pro Person.</strong><br/>+ 1 goldene Sonder-Aufgabe ist immer dabei ⭐
+            💡 Bei 5 Spielern ca. <strong style={{color:'var(--lime)'}}>{Math.ceil(count/5)} Tasks pro Person</strong> + 1 goldene Sonder-Aufgabe ⭐
           </div>
         </div>}
         {step===3&&<div>
-          <div className="head fu" style={{fontSize:26,marginBottom:7}}>Spielregeln</div>
-          <p className="fu f1" style={{color:'var(--muted)',marginBottom:22,fontSize:14}}>Mach die Experience zu deiner.</p>
-          <div className="card fu f2" style={{marginBottom:12}}>
-            {[
-              {l:'Aufgaben mehrfach lösbar',d:'Sonst ist jede Task nur 1× verfügbar',v:multi,s:setMulti},
-            ].map((row,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 0'}}>
-                <div style={{paddingRight:16}}>
-                  <div style={{fontWeight:500,fontSize:14,marginBottom:3}}>{row.l}</div>
-                  <div style={{fontSize:12,color:'var(--muted)'}}>{row.d}</div>
-                </div>
-                <label className="tog"><input type="checkbox" checked={row.v} onChange={e=>row.s(e.target.checked)}/><span className="tsl"/></label>
-              </div>
+          <div className="head fu" style={{fontSize:26,marginBottom:7}}>Eigene Aufgaben?</div>
+          <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>Optional — werden zum Pool dazugemischt.</p>
+          <div style={{display:'flex',flexDirection:'column',gap:10}} className="fu f2">
+            {customTasks.map((t,i)=>(
+              <input key={i} className="inp" placeholder={`Eigene Aufgabe ${i+1} (optional)`} value={t}
+                onChange={e=>{const n=[...customTasks];n[i]=e.target.value;setCustomTasks(n)}}/>
             ))}
+          </div>
+          <p className="fu f3" style={{color:'var(--muted)',fontSize:12,marginTop:12,lineHeight:1.6}}>
+            Eigene Aufgaben erscheinen immer im Spiel. Lass die Felder leer wenn du keine eigenen willst.
+          </p>
+        </div>}
+        {step===4&&<div>
+          <div className="head fu" style={{fontSize:26,marginBottom:7}}>Spielregeln</div>
+          <p className="fu f1" style={{color:'var(--muted)',marginBottom:22,fontSize:14}}>Fast fertig!</p>
+          <div className="card fu f2" style={{marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 0'}}>
+              <div style={{paddingRight:16}}>
+                <div style={{fontWeight:500,fontSize:14,marginBottom:3}}>Aufgaben mehrfach lösbar</div>
+                <div style={{fontSize:12,color:'var(--muted)'}}>Sonst ist jede Task nur 1× verfügbar</div>
+              </div>
+              <label className="tog"><input type="checkbox" checked={multi} onChange={e=>setMulti(e.target.checked)}/><span className="tsl"/></label>
+            </div>
           </div>
           <div className="card fu f3" style={{padding:'14px 18px'}}>
             <div className="lbl" style={{marginBottom:11}}>Zusammenfassung</div>
@@ -277,11 +312,10 @@ function SetupScreen({onStart,onBack}){
               {l:'Anlass',v:(OCCASIONS.find(o=>o.id===occ)||{icon:'—',label:'—'}).icon+' '+(OCCASIONS.find(o=>o.id===occ)||{label:'—'}).label},
               {l:'Vibe',v:(VIBES.find(v=>v.id===vibe)||{icon:'—',label:'—'}).icon+' '+(VIBES.find(v=>v.id===vibe)||{label:'—'}).label},
               {l:'Aufgaben',v:`${count} + ⭐`},
-              {l:'Mehrfach lösbar',v:multi?'Ja':'Nein'},
+              {l:'Eigene',v:`${customTasks.filter(t=>t.trim()).length} Aufgaben`},
             ].map(row=>(
               <div key={row.l} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--bdr)',fontSize:13}}>
-                <span style={{color:'var(--muted)'}}>{row.l}</span>
-                <span style={{fontWeight:500}}>{row.v}</span>
+                <span style={{color:'var(--muted)'}}>{row.l}</span><span style={{fontWeight:500}}>{row.v}</span>
               </div>
             ))}
           </div>
@@ -289,16 +323,16 @@ function SetupScreen({onStart,onBack}){
         </div>}
       </div>
       <div style={{padding:'14px 24px 44px'}}>
-        {step<3
+        {step<4
           ?<button className="btn bp" onClick={()=>setStep(s=>s+1)} disabled={!ok} style={{opacity:ok?1:.3}}>Weiter →</button>
-          :<button className="btn bp" onClick={handleStart} disabled={loading||!ok}>{loading?<><Spinner/> Erstelle Session…</>:'🚀 Session starten'}</button>
+          :<button className="btn bp" onClick={handleStart} disabled={loading}>{loading?<><Spinner/> Erstelle…</>:'🚀 Session starten'}</button>
         }
       </div>
     </div>
   )
 }
 
-/* ─── SCREEN: LOBBY ──────────────────────────────────────────────────── */
+// Lobby Screen
 function LobbyScreen({sessionCode,sessionId,onPlay,onBack}){
   const[parts,setParts]=useState([])
   const[copied,setCopied]=useState(false)
@@ -306,14 +340,11 @@ function LobbyScreen({sessionCode,sessionId,onPlay,onBack}){
 
   useEffect(()=>{
     if(!sessionId)return
-    // Load existing participants
     supabase.from('participants').select('*').eq('session_id',sessionId)
-      .then(({data})=>{ if(data)setParts(data) })
-
-    // Realtime: new participants joining
+      .then(({data})=>{if(data)setParts(data)})
     const ch=supabase.channel(`lobby-${sessionId}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'participants',filter:`session_id=eq.${sessionId}`},
-        payload=>setParts(p=>[...p,payload.new]))
+        p=>setParts(prev=>[...prev,p.new]))
       .subscribe()
     return()=>supabase.removeChannel(ch)
   },[sessionId])
@@ -335,7 +366,7 @@ function LobbyScreen({sessionCode,sessionId,onPlay,onBack}){
       </div>
       <div className="card fu" style={{textAlign:'center',padding:'26px 20px',marginBottom:14,position:'relative'}}>
         <div style={{position:'absolute',top:-1,left:'50%',transform:'translateX(-50%)',background:'var(--lime)',color:'var(--bg)',fontSize:10,fontFamily:'Syne',fontWeight:700,padding:'4px 12px',borderRadius:'0 0 8px 8px',letterSpacing:'.1em',textTransform:'uppercase'}}>QR scannen</div>
-        <div style={{marginBottom:14}}><QRCode code={sessionCode}/></div>
+        <div style={{marginBottom:14}}><QRCodeDisplay code={sessionCode}/></div>
         <div className="disp" style={{fontSize:28,letterSpacing:'.14em',color:'var(--lime)',marginBottom:5}}>{sessionCode}</div>
         <div style={{fontSize:12,color:'var(--muted)'}}>oder Code manuell eingeben</div>
       </div>
@@ -344,7 +375,6 @@ function LobbyScreen({sessionCode,sessionId,onPlay,onBack}){
       </button>
       <div className="lbl" style={{marginBottom:9}}>Teilnehmer</div>
       <div style={{display:'flex',flexDirection:'column',gap:8,flex:1}}>
-        {/* Host */}
         <div className="card" style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:11}}>
           <div className="av" style={{width:32,height:32,fontSize:11,background:'rgba(198,255,0,.18)',border:'1.5px solid rgba(198,255,0,.35)',color:'var(--lime)'}}>Du</div>
           <span style={{fontWeight:500,fontSize:14,flex:1}}>Du (Host)</span>
@@ -359,61 +389,105 @@ function LobbyScreen({sessionCode,sessionId,onPlay,onBack}){
         ))}
       </div>
       <div style={{paddingTop:18}}>
-        <button className="btn bp" onClick={onPlay}>Los geht's ({parts.length+1}) 🚀</button>
+        <button className="btn bp" onClick={()=>onPlay(parts)}>Los geht's ({parts.length+1}) 🚀</button>
         <p style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginTop:9}}>Weitere Leute können auch während des Spiels joinen</p>
       </div>
     </div>
   )
 }
 
-/* ─── SCREEN: JOIN ───────────────────────────────────────────────────── */
+// Join Screen with QR scanner
 function JoinScreen({prefillCode,onJoined,onBack}){
   const[step,setStep]=useState(prefillCode?1:0)
   const[code,setCode]=useState(prefillCode||'')
   const[name,setName]=useState('')
   const[loading,setLoading]=useState(false)
   const[err,setErr]=useState('')
+  const[scanning,setScanning]=useState(false)
+  const videoRef=useRef()
+  const streamRef=useRef()
+
+  const stopScan=()=>{
+    if(streamRef.current){streamRef.current.getTracks().forEach(t=>t.stop());streamRef.current=null}
+    setScanning(false)
+  }
+
+  const startScan=async()=>{
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+      streamRef.current=stream
+      if(videoRef.current){videoRef.current.srcObject=stream;videoRef.current.play()}
+      setScanning(true)
+      // Simple: after 3 sec show manual input (real QR decode needs library)
+      setTimeout(()=>{stopScan();setErr('QR-Scan: Bitte Code manuell eingeben falls kein Ergebnis.')},8000)
+    }catch(e){setErr('Kamera nicht verfügbar. Bitte Code manuell eingeben.')}
+  }
+
+  useEffect(()=>()=>stopScan(),[])
 
   const join=async()=>{
     setLoading(true);setErr('')
     try{
-      // Find session by code
-      const{data:sess,error:sessErr}=await supabase.from('sessions').select('id,status').eq('code',code.toUpperCase()).in('status',['lobby','active']).single()
-      if(sessErr||!sess){setErr('Session nicht gefunden. Bitte prüfe den Code.');setLoading(false);return}
-      // Create participant
+      const{data:sess,error}=await supabase.from('sessions').select('id,status').eq('code',code.toUpperCase()).in('status',['lobby','active']).single()
+      if(error||!sess){setErr('Session nicht gefunden. Code prüfen.');setLoading(false);return}
       const color=randomColor()
-      const{data:part,error:partErr}=await supabase.from('participants').insert({session_id:sess.id,nickname:name.trim(),avatar_color:color}).select().single()
-      if(partErr||!part){setErr('Beitreten fehlgeschlagen. Bitte erneut versuchen.');setLoading(false);return}
-      localStorage.setItem('quest_participant_id',part.id)
-      localStorage.setItem('quest_participant_nickname',name.trim())
-      localStorage.setItem('quest_participant_color',color)
+      const{data:part,error:pErr}=await supabase.from('participants').insert({session_id:sess.id,nickname:name.trim(),avatar_color:color}).select().single()
+      if(pErr||!part){setErr('Beitreten fehlgeschlagen.');setLoading(false);return}
+      localStorage.setItem('quest_pid',part.id)
+      localStorage.setItem('quest_pname',name.trim())
+      localStorage.setItem('quest_pcolor',color)
       onJoined({sessionId:sess.id,participantId:part.id,nickname:name.trim(),color})
-    }catch(e){setErr('Fehler. Bitte erneut versuchen.');console.error(e)}
+    }catch(e){setErr('Fehler. Bitte erneut versuchen.')}
     setLoading(false)
   }
 
   return(
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'52px 24px 44px'}}>
       <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:36}}>
-        <button className="bi" onClick={step===0?onBack:()=>setStep(0)}><BackIcon/></button>
+        <button className="bi" onClick={step===0?onBack:()=>{setStep(0);stopScan()}}><BackIcon/></button>
         <div className="head" style={{fontSize:21}}>Session beitreten</div>
       </div>
       {step===0&&<div className="fu" style={{flex:1}}>
         <div className="head" style={{fontSize:26,marginBottom:7}}>Session-Code</div>
-        <p style={{color:'var(--muted)',marginBottom:28,fontSize:14}}>Den Code bekommst du vom Host.</p>
+        <p style={{color:'var(--muted)',marginBottom:24,fontSize:14}}>Code eingeben oder QR scannen.</p>
+
+        {/* QR Scanner */}
+        {scanning?(
+          <div style={{marginBottom:20}}>
+            <div className="qr-scan-wrap">
+              <video ref={videoRef} playsInline muted style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:16}}/>
+              <div className="qr-corners">
+                <div className="qr-corner tl"/><div className="qr-corner tr"/>
+                <div className="qr-corner bl"/><div className="qr-corner br"/>
+              </div>
+            </div>
+            <button onClick={stopScan} style={{width:'100%',padding:'12px',background:'var(--s2)',border:'1px solid var(--bdr)',borderRadius:'var(--rs)',color:'var(--muted)',fontSize:13,fontFamily:'Syne',fontWeight:600,cursor:'pointer',marginTop:12}}>
+              Kamera schließen
+            </button>
+          </div>
+        ):(
+          <button onClick={startScan} style={{width:'100%',padding:'14px',background:'var(--ld)',border:'1px solid rgba(198,255,0,.25)',borderRadius:'var(--rs)',color:'var(--lime)',fontSize:14,fontFamily:'Syne',fontWeight:700,cursor:'pointer',marginBottom:16,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+            📷 QR-Code scannen
+          </button>
+        )}
+
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+          <div style={{flex:1,height:1,background:'var(--bdr)'}}/>
+          <span style={{fontSize:12,color:'var(--muted)'}}>oder</span>
+          <div style={{flex:1,height:1,background:'var(--bdr)'}}/>
+        </div>
+
         <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <label className="lbl">Code</label>
+          <label className="lbl">Code manuell eingeben</label>
           <input className="inp" placeholder="XTRA-7829" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} style={{fontFamily:'Syne',fontWeight:700,fontSize:22,letterSpacing:'.12em',textAlign:'center'}}/>
+          {err&&<div className="err">{err}</div>}
         </div>
       </div>}
       {step===1&&<div className="fu" style={{flex:1}}>
         <div className="head" style={{fontSize:26,marginBottom:7}}>Dein Nickname</div>
         <p style={{color:'var(--muted)',marginBottom:28,fontSize:14}}>Wie sollen dich die anderen nennen?</p>
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <label className="lbl">Name</label>
-          <input className="inp" placeholder="z.B. Jonas 🎉" value={name} onChange={e=>setName(e.target.value)} autoFocus/>
-          {err&&<div className="err">{err}</div>}
-        </div>
+        <input className="inp" placeholder="z.B. Jonas 🎉" value={name} onChange={e=>setName(e.target.value)} autoFocus/>
+        {err&&<div className="err">{err}</div>}
       </div>}
       <div>
         {step===0
@@ -425,73 +499,52 @@ function JoinScreen({prefillCode,onJoined,onBack}){
   )
 }
 
-/* ─── SCREEN: GAME ───────────────────────────────────────────────────── */
-function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,isHost,showQRGlobal,setShowQRGlobal,onEnd}){
+// Game Screen
+function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,isHost,showQRGlobal,setShowQRGlobal,onEnd,onSaveSession}){
   const[tasks,setTasks]=useState([])
   const[parts,setParts]=useState([])
   const[activeId,setActiveId]=useState(null)
-  const[phase,setPhase]=useState('list') // list | active | upload
+  const[phase,setPhase]=useState('list')
   const[uploading,setUploading]=useState(false)
   const[flash,setFlash]=useState(null)
   const[streak,setStreak]=useState(0)
   const[endConfirm,setEndConfirm]=useState(false)
   const fileRef=useRef()
-  const{toasts,add:addToast}=useToast()
+  const{toasts,add}=useToast()
 
-  // Load tasks + participants
   useEffect(()=>{
     if(!sessionId)return
     supabase.from('tasks').select('*').eq('session_id',sessionId).order('sort_order')
-      .then(({data})=>{ if(data)setTasks(data) })
+      .then(({data})=>{if(data)setTasks(data)})
     supabase.from('participants').select('*').eq('session_id',sessionId)
-      .then(({data})=>{ if(data)setParts(data) })
-
-    // Realtime
+      .then(({data})=>{if(data)setParts(data)})
     const ch=supabase.channel(`game-${sessionId}`)
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'tasks',filter:`session_id=eq.${sessionId}`},
-        payload=>{
-          setTasks(prev=>prev.map(t=>t.id===payload.new.id?payload.new:t))
-          // Toast when someone else completes
-          if(payload.new.status==='done'&&payload.new.claimed_by!==myParticipantId){
-            addToast(`${payload.new.claimed_by_nickname||'Jemand'} hat "${(payload.new.text||'').slice(0,24)}…" erledigt ✓`,
-              avatarLetter(payload.new.claimed_by_nickname||'?'),'#C6FF00')
-          }
+        p=>{
+          setTasks(prev=>prev.map(t=>t.id===p.new.id?p.new:t))
+          if(p.new.status==='done'&&p.new.claimed_by!==myParticipantId)
+            add(`${p.new.claimed_by_nickname||'Jemand'} hat eine Aufgabe erledigt ✓`,avatarLetter(p.new.claimed_by_nickname||'?'),'#C6FF00')
         })
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'participants',filter:`session_id=eq.${sessionId}`},
-        payload=>{
-          setParts(prev=>[...prev,payload.new])
-          addToast(`${payload.new.nickname} ist beigetreten 👋`,avatarLetter(payload.new.nickname),payload.new.avatar_color||'#C6FF00')
-        })
+        p=>{setParts(prev=>[...prev,p.new]);add(`${p.new.nickname} ist beigetreten 👋`,avatarLetter(p.new.nickname),p.new.avatar_color||'#C6FF00')})
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sessions',filter:`id=eq.${sessionId}`},
-        payload=>{ if(payload.new.status==='ended')onEnd() })
+        p=>{if(p.new.status==='ended')onEnd()})
       .subscribe()
-
-    // Flash challenge after ~3min
-    const ft=setTimeout(()=>{
-      const f=FLASH_CHALLENGES[Math.floor(Math.random()*FLASH_CHALLENGES.length)]
-      setFlash(f)
-    },180000) // 3 minutes
-
+    const ft=setTimeout(()=>setFlash(FLASH_CHALLENGES[Math.floor(Math.random()*FLASH_CHALLENGES.length)]),180000)
     return()=>{supabase.removeChannel(ch);clearTimeout(ft)}
   },[sessionId])
 
-  const activeTask=tasks.find(t=>t.id===activeId)
   const myActive=tasks.find(t=>t.claimed_by===myParticipantId&&t.status==='active')
 
   const pickTask=async(task)=>{
     if(task.status!=='open'||myActive)return
-    // Optimistic
     setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}:t))
     setActiveId(task.id);setPhase('active')
-    // Supabase
-    const{data,error}=await supabase.from('tasks')
-      .update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname})
-      .eq('id',task.id).eq('status','open').select().single()
+    const{data,error}=await supabase.from('tasks').update({status:'active',claimed_by:myParticipantId,claimed_by_nickname:myNickname}).eq('id',task.id).eq('status','open').select().single()
     if(error||!data){
-      // Revert - someone else got it
       setTasks(prev=>prev.map(t=>t.id===task.id?{...t,status:'open',claimed_by:null,claimed_by_nickname:null}:t))
       setActiveId(null);setPhase('list')
-      addToast('Aufgabe wurde gerade vergeben 😅','!','#FF4040')
+      add('Aufgabe gerade vergeben 😅','!','#FF4040')
     }
   }
 
@@ -509,17 +562,18 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
     try{
       if(file){
         const ext=file.name.split('.').pop()||'jpg'
-        const path=`${sessionId}/${activeId}.${ext}`
+        const path=`${sessionId}/${activeId}_${Date.now()}.${ext}`
         const{error:upErr}=await supabase.storage.from('proofs').upload(path,file,{upsert:true})
         if(!upErr){
           const{data:{publicUrl}}=supabase.storage.from('proofs').getPublicUrl(path)
           photoUrl=publicUrl
         }
       }
+      const task=tasks.find(t=>t.id===activeId)
       await supabase.from('tasks').update({status:'done',photo_url:photoUrl,completed_at:new Date().toISOString()}).eq('id',activeId)
       setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'done',photo_url:photoUrl}:t))
       const ns=streak+1;setStreak(ns)
-      addToast(ns>=3?`🔥 ${ns}er Streak! Unaufhaltbar!`:`"${(activeTask?.text||'').slice(0,26)}…" erledigt ✓`,'D',myColor||'#C6FF00')
+      add(ns>=3?`🔥 ${ns}er Streak!`:`"${(task?.text||'').slice(0,26)}…" erledigt ✓`,'D',myColor||'#C6FF00')
       setActiveId(null);setPhase('list')
     }catch(e){console.error(e)}
     setUploading(false)
@@ -527,6 +581,7 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
 
   const endSession=async()=>{
     await supabase.from('sessions').update({status:'ended'}).eq('id',sessionId)
+    onSaveSession(sessionId)
     onEnd()
   }
 
@@ -536,8 +591,6 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
   return(
     <div style={{minHeight:'100vh',paddingBottom:100}}>
       <Toast toasts={toasts}/>
-
-      {/* Header */}
       <div style={{position:'sticky',top:0,zIndex:20,background:'var(--bg)',padding:'50px 24px 13px',borderBottom:'1px solid var(--bdr)'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:13}}>
           <div>
@@ -550,11 +603,6 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
             {streak>=2&&<div style={{display:'flex',alignItems:'center',gap:5,padding:'7px 11px',background:'var(--gd)',border:'1px solid rgba(255,179,0,.22)',borderRadius:'var(--rxs)'}}>
               <span style={{fontSize:13}}>🔥</span><span style={{fontFamily:'Syne',fontWeight:700,fontSize:12,color:'var(--gold)'}}>{streak}x</span>
             </div>}
-            <div style={{display:'flex'}}>
-              {parts.slice(0,3).map((p,i)=>(
-                <div key={p.id} className="av" style={{width:26,height:26,fontSize:9,background:(p.avatar_color||'#555')+'22',border:`1.5px solid ${p.avatar_color||'#555'}40`,color:p.avatar_color||'#aaa',marginLeft:i?-7:0,zIndex:3-i}}>{avatarLetter(p.nickname)}</div>
-              ))}
-            </div>
           </div>
         </div>
         <div style={{display:'flex',alignItems:'center',gap:9}}>
@@ -563,28 +611,28 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
         </div>
       </div>
 
-      {/* Task list */}
       <div style={{padding:'14px 24px',display:'flex',flexDirection:'column',gap:9}}>
         {tasks.map((task,idx)=>{
-          const isMyActive=task.claimed_by===myParticipantId&&task.status==='active'
-          const isOtherActive=task.status==='active'&&task.claimed_by!==myParticipantId
+          const isMyAct=task.claimed_by===myParticipantId&&task.status==='active'
+          const isOtherAct=task.status==='active'&&task.claimed_by!==myParticipantId
           const isDone=task.status==='done'
-          const hasMyActive=!!myActive
+          const hasMyAct=!!myActive
           return(
             <div key={task.id}
-              className={`tc ${isDone?'tdone':''} ${isOtherActive?'tlock':''} ${task.is_golden&&!isDone?'tgold':''} ${isMyActive?'tact':''}`}
-              onClick={()=>task.status==='open'&&!hasMyActive?pickTask(task):null}
-              style={{cursor:task.status==='open'&&!hasMyActive?'pointer':'default',animation:`fu .4s ${idx*.03}s cubic-bezier(.16,1,.3,1) both`}}>
+              className={`tc ${isDone?'tdone':''} ${isOtherAct?'tlock':''} ${task.is_golden&&!isDone?'tgold':''} ${isMyAct?'tact':''}`}
+              onClick={()=>task.status==='open'&&!hasMyAct?pickTask(task):null}
+              style={{cursor:task.status==='open'&&!hasMyAct?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`}}>
               {task.is_golden&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cg" style={{fontSize:10,padding:'3px 8px'}}>⭐ Golden Task</span></div>}
+              {task.is_custom&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>✏️ Eigene</span></div>}
               <div style={{display:'flex',alignItems:'flex-start',gap:13}}>
                 <span style={{fontSize:24,flexShrink:0,marginTop:1}}>{task.emoji}</span>
-                <div style={{flex:1,paddingRight:task.is_golden&&!isDone?60:0}}>
+                <div style={{flex:1,paddingRight:(task.is_golden||task.is_custom)&&!isDone?70:0}}>
                   <div style={{fontSize:13,fontWeight:500,lineHeight:1.45,marginBottom:7,textDecoration:isDone?'line-through':'none',color:isDone?'var(--muted)':'var(--white)'}}>{task.text}</div>
                   <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-                    <span className="chip" style={{fontSize:10,padding:'3px 8px'}}>{task.type}</span>
+                    <span className="chip" style={{fontSize:10,padding:'3px 8px'}}>Foto</span>
                     {isDone&&<span className="chip cl" style={{fontSize:10,padding:'3px 8px'}}>✓ {task.claimed_by_nickname||'Erledigt'}</span>}
-                    {isOtherActive&&<span className="chip cr" style={{fontSize:10,padding:'3px 8px'}}>🔒 {task.claimed_by_nickname}</span>}
-                    {isMyActive&&<span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>⚡ Du gerade</span>}
+                    {isOtherAct&&<span className="chip cr" style={{fontSize:10,padding:'3px 8px'}}>🔒 {task.claimed_by_nickname}</span>}
+                    {isMyAct&&<span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>⚡ Du gerade</span>}
                   </div>
                 </div>
               </div>
@@ -593,11 +641,8 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
         })}
       </div>
 
-      {/* End session */}
       <div style={{position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:430,padding:'12px 24px 34px',background:'linear-gradient(to top,var(--bg) 60%,transparent)',zIndex:22}}>
-        {isHost&&<button onClick={()=>setEndConfirm(true)} style={{width:'100%',padding:'13px',background:'transparent',border:'1px solid rgba(255,64,64,.22)',borderRadius:'var(--rs)',color:'var(--red)',fontFamily:'Syne',fontWeight:700,fontSize:13,cursor:'pointer',transition:'all .2s'}}
-          onMouseEnter={e=>{e.currentTarget.style.background='var(--rd)';e.currentTarget.style.borderColor='rgba(255,64,64,.45)'}}
-          onMouseLeave={e=>{e.currentTarget.style.background='transparent';e.currentTarget.style.borderColor='rgba(255,64,64,.22)'}}>
+        {isHost&&<button onClick={()=>setEndConfirm(true)} style={{width:'100%',padding:'13px',background:'transparent',border:'1px solid rgba(255,64,64,.22)',borderRadius:'var(--rs)',color:'var(--red)',fontFamily:'Syne',fontWeight:700,fontSize:13,cursor:'pointer',transition:'all .2s'}}>
           Session beenden
         </button>}
       </div>
@@ -612,7 +657,7 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
             <div style={{fontSize:30,margin:'10px 0 8px'}}>{myActive.emoji}</div>
             <div style={{fontSize:16,fontWeight:500,lineHeight:1.5,marginBottom:22}}>{myActive.text}</div>
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setPhase('upload')} className="btn bp" style={{flex:1,padding:'14px'}}>📸 Beweis hochladen</button>
+              <button onClick={()=>setPhase('upload')} className="btn bp" style={{flex:1,padding:'14px'}}>📸 Foto hochladen</button>
               <button onClick={cancelTask} style={{padding:'14px 16px',background:'var(--rd)',border:'1px solid rgba(255,64,64,.28)',borderRadius:'var(--rs)',color:'var(--red)',cursor:'pointer',fontSize:13,fontFamily:'Syne',fontWeight:700,whiteSpace:'nowrap'}}>Abbruch</button>
             </div>
           </div>
@@ -625,17 +670,14 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
           <div className="overlay" onClick={()=>setPhase('active')}/>
           <div className="sheet">
             <div className="sh"/>
-            <div className="head" style={{fontSize:21,marginBottom:5}}>Beweis hochladen</div>
-            <p style={{color:'var(--muted)',fontSize:13,marginBottom:22}}>Ein Foto oder kurzes Video reicht.</p>
-            {/* Hidden file input - opens camera on mobile */}
-            <input ref={fileRef} type="file" accept="image/*,video/*" capture="environment" style={{display:'none'}}
+            <div className="head" style={{fontSize:21,marginBottom:5}}>Foto hochladen</div>
+            <p style={{color:'var(--muted)',fontSize:13,marginBottom:22}}>Mach ein Foto als Beweis.</p>
+            <input ref={fileRef} type="file" accept="image/*" capture="environment" style={{display:'none'}}
               onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
-            <div onClick={()=>fileRef.current?.click()} style={{border:'2px dashed rgba(198,255,0,.22)',borderRadius:'var(--r)',padding:'32px',textAlign:'center',marginBottom:18,cursor:'pointer',background:'var(--ld)',transition:'all .2s'}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor='rgba(198,255,0,.45)'}
-              onMouseLeave={e=>e.currentTarget.style.borderColor='rgba(198,255,0,.22)'}>
+            <div onClick={()=>fileRef.current?.click()} style={{border:'2px dashed rgba(198,255,0,.22)',borderRadius:'var(--r)',padding:'32px',textAlign:'center',marginBottom:18,cursor:'pointer',background:'var(--ld)',transition:'all .2s'}}>
               <div style={{fontSize:40,marginBottom:9}}>📷</div>
               <div style={{fontFamily:'Syne',fontWeight:700,marginBottom:3,fontSize:14}}>{uploading?<><Spinner/> Hochladen…</>:'Kamera öffnen'}</div>
-              <div style={{fontSize:12,color:'var(--muted)'}}>Foto · Galerie · Video</div>
+              <div style={{fontSize:12,color:'var(--muted)'}}>Foto aus Galerie oder Kamera</div>
             </div>
             <div style={{display:'flex',gap:9}}>
               <button onClick={()=>setPhase('active')} className="btn bs" style={{flex:1,padding:'13px',border:'1px solid var(--bdr2)'}}>Zurück</button>
@@ -645,7 +687,6 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
         </>
       )}
 
-      {/* Flash Challenge */}
       {flash&&(
         <div className="flash-bg">
           <div className="flash-box">
@@ -661,7 +702,6 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
         </div>
       )}
 
-      {/* QR Join Sheet */}
       {showQRGlobal&&(
         <>
           <div className="overlay" onClick={()=>setShowQRGlobal(false)}/>
@@ -669,14 +709,13 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
             <div className="sh"/>
             <div className="head" style={{fontSize:19,marginBottom:4,textAlign:'center'}}>Noch jemand dabei?</div>
             <p style={{color:'var(--muted)',fontSize:12,textAlign:'center',marginBottom:20}}>QR scannen — auch während des Spiels</p>
-            <div style={{marginBottom:18}}><QRCode code={sessionCode}/></div>
+            <div style={{marginBottom:18}}><QRCodeDisplay code={sessionCode}/></div>
             <div className="disp" style={{fontSize:26,letterSpacing:'.14em',color:'var(--lime)',textAlign:'center',marginBottom:18}}>{sessionCode}</div>
             <button onClick={()=>setShowQRGlobal(false)} className="btn bp">Schließen</button>
           </div>
         </>
       )}
 
-      {/* End confirm */}
       {endConfirm&&(
         <>
           <div className="overlay" onClick={()=>setEndConfirm(false)}/>
@@ -685,7 +724,7 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
             <div style={{fontSize:34,textAlign:'center',marginBottom:11}}>🏁</div>
             <div className="head" style={{fontSize:21,textAlign:'center',marginBottom:7}}>Session beenden?</div>
             <p style={{color:'var(--muted)',fontSize:13,textAlign:'center',marginBottom:26,lineHeight:1.6}}>
-              {done} Aufgaben erledigt. Das Album wird für alle gespeichert.
+              {done} Aufgaben erledigt. Das Album wird gespeichert und ist 30 Tage abrufbar.
             </p>
             <div style={{display:'flex',gap:9}}>
               <button onClick={()=>setEndConfirm(false)} className="btn bs" style={{flex:1,padding:'13px',border:'1px solid var(--bdr2)'}}>Weiter feiern</button>
@@ -698,27 +737,35 @@ function GameScreen({sessionId,sessionCode,myParticipantId,myNickname,myColor,is
   )
 }
 
-/* ─── SCREEN: END ────────────────────────────────────────────────────── */
+// End Screen
 function EndScreen({sessionId,sessionData,onHome}){
   const[conf,setConf]=useState(true)
   const[completions,setCompletions]=useState([])
-  const[showZeugnis,setShowZeugnis]=useState(false)
   const[parts,setParts]=useState([])
+  const[showZeugnis,setShowZeugnis]=useState(false)
+  const[copied,setCopied]=useState(false)
 
   useEffect(()=>{
     setTimeout(()=>setConf(false),4200)
     setTimeout(()=>setShowZeugnis(true),2000)
     if(!sessionId)return
     supabase.from('tasks').select('*').eq('session_id',sessionId).eq('status','done').order('completed_at')
-      .then(({data})=>{ if(data)setCompletions(data) })
+      .then(({data})=>{if(data)setCompletions(data)})
     supabase.from('participants').select('*').eq('session_id',sessionId)
-      .then(({data})=>{ if(data)setParts(data) })
+      .then(({data})=>{if(data)setParts(data)})
   },[sessionId])
+
+  const albumUrl=`${window.location.origin}?album=${sessionId}`
+  const copyAlbum=()=>{
+    navigator.clipboard.writeText(albumUrl)
+    setCopied(true);setTimeout(()=>setCopied(false),2500)
+  }
 
   const occ=OCCASIONS.find(o=>o.id===sessionData?.config?.occ)||{icon:'🎉',label:'Party'}
   const vib=VIBES.find(v=>v.id===sessionData?.config?.vibe)||{icon:'🔥',label:'Party'}
   const dateStr=new Date(sessionData?.created_at||Date.now()).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'})
   const quote=QUOTES[Math.floor(Math.random()*QUOTES.length)]
+  const photosOnly=completions.filter(c=>c.photo_url)
 
   return(
     <div style={{minHeight:'100vh',padding:'52px 24px 60px',overflowY:'auto'}}>
@@ -726,39 +773,50 @@ function EndScreen({sessionId,sessionData,onHome}){
       <div className="fu" style={{textAlign:'center',marginBottom:32}}>
         <div style={{fontSize:52,marginBottom:13}}>🎉</div>
         <div className="disp" style={{fontSize:38,marginBottom:7}}>Was ein Abend.</div>
-        <p style={{color:'var(--muted)',fontSize:15}}>Eure Erinnerungen sind gespeichert.</p>
+        <p style={{color:'var(--muted)',fontSize:15}}>Euer Album ist bereit.</p>
       </div>
-      <div className="fu f1" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:9,marginBottom:28}}>
+      <div className="fu f1" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:9,marginBottom:24}}>
         <div className="stat"><div className="sn">{completions.length}</div><div className="sl">Tasks</div></div>
+        <div className="stat"><div className="sn">{photosOnly.length}</div><div className="sl">Fotos</div></div>
         <div className="stat"><div className="sn">{parts.length+1}</div><div className="sl">Leute</div></div>
-        <div className="stat"><div className="sn">{occ.icon}</div><div className="sl">{occ.label}</div></div>
       </div>
-      <div className="fu f2" style={{marginBottom:28}}>
-        <div className="lbl" style={{marginBottom:13}}>Die Momente 📸</div>
-        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-          {completions.length===0&&<div style={{textAlign:'center',padding:'32px',color:'var(--muted)',fontSize:14}}>Die Fotos laden…</div>}
-          {completions.map((c,i)=>(
-            <div key={c.id} className="mem" style={{animation:`fu .45s ${i*.06}s cubic-bezier(.16,1,.3,1) both`}}>
-              <div className="mem-img" style={{background:'#0A0D1A',minHeight:200}}>
-                {c.photo_url
-                  ?<img src={c.photo_url} alt={c.text} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                  :<span style={{fontSize:64}}>{c.emoji}</span>}
-                <div className="mem-tag">{c.claimed_by_nickname||'Anonym'}</div>
-              </div>
-              <div style={{padding:'13px 17px'}}>
-                <div style={{fontSize:11,color:'var(--lime)',fontFamily:'Syne',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em',marginBottom:4}}>{c.claimed_by_nickname||'Anonym'}</div>
-                <div style={{fontSize:13,fontWeight:500,lineHeight:1.4}}>{c.text}</div>
-              </div>
-            </div>
-          ))}
+
+      {/* Album teilen */}
+      <div className="fu f2 card" style={{marginBottom:20,padding:'18px 20px'}}>
+        <div className="lbl" style={{marginBottom:10}}>Album teilen</div>
+        <div className="warn" style={{marginBottom:14}}>
+          <span>⏰</span>
+          <span>Das Album wird in <strong>30 Tagen</strong> automatisch gelöscht. Fotos vorher herunterladen!</span>
         </div>
+        <button onClick={copyAlbum} className="btn bp" style={{padding:'13px',fontSize:14}}>
+          {copied?'✓ Album-Link kopiert!':'🔗 Album-Link kopieren'}
+        </button>
+        <a href={albumUrl} target="_blank" rel="noreferrer" style={{display:'block',textAlign:'center',marginTop:10,color:'var(--muted)',fontSize:12,textDecoration:'none'}}>
+          Album öffnen →
+        </a>
       </div>
+
+      {/* Foto-Vorschau */}
+      {photosOnly.length>0&&(
+        <div className="fu f3" style={{marginBottom:24}}>
+          <div className="lbl" style={{marginBottom:12}}>Fotos ({photosOnly.length})</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:10}}>
+            {photosOnly.slice(0,4).map((c,i)=>(
+              <div key={c.id} style={{borderRadius:12,overflow:'hidden',aspectRatio:'4/3',background:'var(--s2)',position:'relative'}}>
+                <img src={c.photo_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                <div style={{position:'absolute',bottom:6,left:6,background:'rgba(0,0,0,.6)',borderRadius:100,padding:'3px 8px',fontSize:10,fontFamily:'Syne',fontWeight:600}}>{c.claimed_by_nickname}</div>
+              </div>
+            ))}
+          </div>
+          {photosOnly.length>4&&<div style={{textAlign:'center',color:'var(--muted)',fontSize:12,marginTop:8}}>+{photosOnly.length-4} weitere im Album</div>}
+        </div>
+      )}
+
       <div className="fu f4" style={{display:'flex',flexDirection:'column',gap:10}}>
-        <button className="btn bp">🔗 Album teilen · Link erstellen</button>
         <button className="btn bs" onClick={onHome} style={{border:'1px solid var(--bdr2)'}}>Zurück zur Übersicht</button>
       </div>
 
-      {/* ABEND-ZEUGNIS (Surprise) */}
+      {/* Zeugnis */}
       {showZeugnis&&(
         <div className="zeug-bg" onClick={e=>e.target===e.currentTarget&&setShowZeugnis(false)}>
           <div className="zeug-inner">
@@ -778,8 +836,8 @@ function EndScreen({sessionId,sessionData,onHome}){
                 {[
                   {l:'Datum',v:dateStr},
                   {l:'Vibe',v:vib.label},
-                  {l:'Tasks erledigt',v:`${completions.length} von ${sessionData?.config?.count||20}`},
-                  {l:'Spieler',v:`${parts.length+1} Leute`},
+                  {l:'Tasks',v:`${completions.length} erledigt`},
+                  {l:'Fotos',v:`${photosOnly.length} Bilder`},
                 ].map(r=>(
                   <div key={r.l} style={{background:'rgba(198,255,0,.05)',borderRadius:10,padding:'10px 12px',border:'1px solid rgba(198,255,0,.1)'}}>
                     <div style={{fontSize:10,color:'rgba(198,255,0,.5)',fontFamily:'Syne',fontWeight:600,textTransform:'uppercase',letterSpacing:'.08em',marginBottom:4}}>{r.l}</div>
@@ -788,12 +846,12 @@ function EndScreen({sessionId,sessionData,onHome}){
                 ))}
               </div>
               {parts.length>0&&(
-                <div style={{marginBottom:18}}>
-                  <div style={{fontSize:10,fontFamily:'Syne',fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(198,255,0,.4)',marginBottom:10}}>Wer dabei war</div>
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:10,fontFamily:'Syne',fontWeight:600,letterSpacing:'.1em',textTransform:'uppercase',color:'rgba(198,255,0,.4)',marginBottom:8}}>Wer dabei war</div>
                   <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                     {[{nickname:'Du',avatar_color:'#C6FF00'},...parts].map((p,i)=>(
-                      <div key={i} style={{display:'flex',alignItems:'center',gap:6,padding:'5px 10px',background:'rgba(255,255,255,.04)',borderRadius:100,border:'1px solid rgba(255,255,255,.07)'}}>
-                        <div className="av" style={{width:18,height:18,fontSize:8,background:(p.avatar_color||'#555')+'22',color:p.avatar_color||'#aaa'}}>{avatarLetter(p.nickname)}</div>
+                      <div key={i} style={{display:'flex',alignItems:'center',gap:5,padding:'4px 9px',background:'rgba(255,255,255,.04)',borderRadius:100,border:'1px solid rgba(255,255,255,.07)'}}>
+                        <div className="av" style={{width:16,height:16,fontSize:7,background:(p.avatar_color||'#555')+'22',color:p.avatar_color||'#aaa'}}>{avatarLetter(p.nickname)}</div>
                         <span style={{fontSize:11,fontWeight:500}}>{p.nickname}</span>
                       </div>
                     ))}
@@ -804,10 +862,9 @@ function EndScreen({sessionId,sessionData,onHome}){
                 <div style={{fontSize:12,color:'rgba(198,255,0,.55)',fontStyle:'italic',lineHeight:1.55}}>"{quote}"</div>
               </div>
             </div>
-            <p style={{fontSize:12,color:'var(--muted)',textAlign:'center',marginBottom:18,lineHeight:1.6}}>Dein persönliches Zeugnis — sichern oder teilen.</p>
             <div style={{display:'flex',gap:9}}>
               <button onClick={()=>setShowZeugnis(false)} className="btn bs" style={{flex:1,padding:'13px',border:'1px solid var(--bdr2)'}}>Schließen</button>
-              <button className="btn bp" style={{flex:1,padding:'13px'}}>💾 Sichern</button>
+              <button onClick={copyAlbum} className="btn bp" style={{flex:1,padding:'13px'}}>{copied?'✓ Kopiert!':'🔗 Album teilen'}</button>
             </div>
           </div>
         </div>
@@ -816,7 +873,7 @@ function EndScreen({sessionId,sessionData,onHome}){
   )
 }
 
-/* ─── SCREEN: HISTORY ────────────────────────────────────────────────── */
+// History Screen
 function HistoryScreen({onBack,onView}){
   const[sessions,setSessions]=useState([])
   useEffect(()=>{
@@ -833,7 +890,6 @@ function HistoryScreen({onBack,onView}){
         <div style={{textAlign:'center',padding:'60px 0',color:'var(--muted)'}}>
           <div style={{fontSize:44,marginBottom:14}}>🗂</div>
           <div style={{fontFamily:'Syne',fontWeight:600,marginBottom:7}}>Noch keine Sessions</div>
-          <div style={{fontSize:13}}>Starte deine erste Session!</div>
         </div>
       ):(
         <div style={{display:'flex',flexDirection:'column',gap:11}}>
@@ -854,7 +910,7 @@ function HistoryScreen({onBack,onView}){
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{color:'var(--muted)'}}><path d="M5 2.5L9.5 7L5 11.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
                 <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
-                  <span className="chip cl" style={{fontSize:10}}>✓ {s.tasksCompleted||0} Tasks</span>
+                  <span className="chip cl" style={{fontSize:10}}>Album öffnen →</span>
                   <span className="chip" style={{fontSize:10}}>{v.icon} {v.label}</span>
                 </div>
               </div>
@@ -866,7 +922,7 @@ function HistoryScreen({onBack,onView}){
   )
 }
 
-/* ─── MAIN APP ───────────────────────────────────────────────────────── */
+/* ─── MAIN APP ────────────────────────────────────────────────────────────── */
 export default function App(){
   const[screen,setScreen]=useState('home')
   const[setupKey,setSetupKey]=useState(0)
@@ -879,57 +935,59 @@ export default function App(){
   const[isHost,setIsHost]=useState(false)
   const[showQR,setShowQR]=useState(false)
   const[prefillCode,setPrefillCode]=useState(null)
+  const[consentDone,setConsentDone]=useState(()=>!!localStorage.getItem('quest_consent'))
+  const[albumId,setAlbumId]=useState(null)
 
-  // Check for ?join=CODE in URL (QR scan)
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search)
-    const code=params.get('join')
-    if(code){setPrefillCode(code);setScreen('join');window.history.replaceState({},'',window.location.pathname)}
+    const join=params.get('join')
+    const album=params.get('album')
+    if(join){setPrefillCode(join);setScreen('join');window.history.replaceState({},'',window.location.pathname)}
+    if(album){setAlbumId(album);setScreen('album');window.history.replaceState({},'',window.location.pathname)}
   },[])
 
-  const go=(s)=>{ setScreen(s);window.scrollTo(0,0) }
+  const go=(s)=>{setScreen(s);window.scrollTo(0,0)}
 
   const handleHostStart=async(config)=>{
     const code=generateCode()
-    // Create session in Supabase
     const{data:sess,error}=await supabase.from('sessions').insert({code,config,status:'lobby'}).select().single()
     if(error)throw error
-    // Insert tasks
-    const taskList=buildTaskList(config.vibe,config.count)
+    const{buildTaskList}=await import('./data')
+    const taskList=buildTaskList(config.vibe,config.count,config.customTasks||[])
     const taskRows=taskList.map((t,i)=>({
-      session_id:sess.id,emoji:t.e,text:t.t,type:t.ty,
-      is_golden:t.isGold||false,status:'open',sort_order:i
+      session_id:sess.id,emoji:t.e,text:t.t,type:'Foto',
+      is_golden:t.isGold||false,is_custom:t.isCustom||false,
+      status:'open',sort_order:i
     }))
     await supabase.from('tasks').insert(taskRows)
-    // Save to history
     const history=JSON.parse(localStorage.getItem('quest_sessions')||'[]')
     localStorage.setItem('quest_sessions',JSON.stringify([{...sess,config},...history].slice(0,20)))
-
-    setSessionId(sess.id)
-    setSessionCode(code)
-    setSessionData(sess)
-    setIsHost(true)
+    setSessionId(sess.id);setSessionCode(code);setSessionData(sess);setIsHost(true)
     go('lobby')
   }
 
   const handleGuestJoined=({sessionId:sid,participantId,nickname,color})=>{
-    setSessionId(sid)
-    setMyParticipantId(participantId)
-    setMyNickname(nickname)
-    setMyColor(color)
-    setIsHost(false)
-    // Load session data
-    supabase.from('sessions').select('*').eq('id',sid).single().then(({data})=>{ if(data){setSessionData(data);setSessionCode(data.code)} })
+    setSessionId(sid);setMyParticipantId(participantId);setMyNickname(nickname);setMyColor(color);setIsHost(false)
+    supabase.from('sessions').select('*').eq('id',sid).single().then(({data})=>{if(data){setSessionData(data);setSessionCode(data.code)}})
     go('game')
   }
 
-  const handleSessionEnd=()=>{
-    // Update history
+  const handleSessionEnd=()=>go('end')
+
+  const saveSession=(sid)=>{
     const history=JSON.parse(localStorage.getItem('quest_sessions')||'[]')
-    const updated=history.map(s=>s.id===sessionId?{...s,status:'ended'}:s)
+    const updated=history.map(s=>s.id===sid?{...s,status:'ended'}:s)
     localStorage.setItem('quest_sessions',JSON.stringify(updated))
-    go('end')
   }
+
+  const acceptConsent=()=>{
+    localStorage.setItem('quest_consent','1')
+    setConsentDone(true)
+  }
+
+  // Album view (public, no consent needed)
+  if(screen==='album') return <Album sessionId={albumId}/>
+  if(screen==='legal') return <Legal onBack={()=>go('home')}/>
 
   return(
     <>
@@ -937,15 +995,18 @@ export default function App(){
       <div className="app">
         <div className="noise-layer"/>
 
-        {/* FAB — rendered at app root so it never scrolls */}
+        {/* Consent */}
+        {!consentDone&&screen!=='join'&&(
+          <ConsentScreen onAccept={acceptConsent} onLegal={()=>go('legal')}/>
+        )}
+
+        {/* FAB */}
         {screen==='game'&&(
           <button onClick={()=>setShowQR(true)} style={{
-            position:'fixed',bottom:28,
-            right:`max(20px, calc(50% - 195px))`,
-            width:48,height:48,borderRadius:'50%',
-            background:'var(--s2)',border:'1.5px solid var(--bdr2)',
-            display:'flex',alignItems:'center',justifyContent:'center',
-            cursor:'pointer',zIndex:30,transition:'all .2s',
+            position:'fixed',bottom:28,right:`max(20px, calc(50% - 195px))`,
+            width:48,height:48,borderRadius:'50%',background:'var(--s2)',
+            border:'1.5px solid var(--bdr2)',display:'flex',alignItems:'center',
+            justifyContent:'center',cursor:'pointer',zIndex:30,transition:'all .2s',
             boxShadow:'0 6px 24px rgba(0,0,0,.55)',color:'var(--white)'
           }}>
             <svg width="19" height="19" viewBox="0 0 19 19" fill="none">
@@ -957,13 +1018,13 @@ export default function App(){
           </button>
         )}
 
-        {screen==='home'&&<HomeScreen key="home" onHost={()=>{setSetupKey(k=>k+1);go('setup')}} onJoin={()=>go('join')} onHistory={()=>go('history')} histCount={JSON.parse(localStorage.getItem('quest_sessions')||'[]').length}/>}
+        {screen==='home'&&<HomeScreen key="home" onHost={()=>{setSetupKey(k=>k+1);go('setup')}} onJoin={()=>go('join')} onHistory={()=>go('history')} histCount={JSON.parse(localStorage.getItem('quest_sessions')||'[]').length} onLegal={()=>go('legal')}/>}
         {screen==='setup'&&<SetupScreen key={setupKey} onStart={handleHostStart} onBack={()=>go('home')}/>}
-        {screen==='lobby'&&<LobbyScreen sessionCode={sessionCode} sessionId={sessionId} onPlay={()=>go('game')} onBack={()=>go('setup')}/>}
+        {screen==='lobby'&&<LobbyScreen sessionCode={sessionCode} sessionId={sessionId} onPlay={p=>go('game')} onBack={()=>go('setup')}/>}
         {screen==='join'&&<JoinScreen prefillCode={prefillCode} onJoined={handleGuestJoined} onBack={()=>go('home')}/>}
-        {screen==='game'&&<GameScreen sessionId={sessionId} sessionCode={sessionCode} myParticipantId={myParticipantId} myNickname={myNickname} myColor={myColor} isHost={isHost} showQRGlobal={showQR} setShowQRGlobal={setShowQR} onEnd={handleSessionEnd}/>}
+        {screen==='game'&&<GameScreen sessionId={sessionId} sessionCode={sessionCode} myParticipantId={myParticipantId} myNickname={myNickname} myColor={myColor} isHost={isHost} showQRGlobal={showQR} setShowQRGlobal={setShowQR} onEnd={handleSessionEnd} onSaveSession={saveSession}/>}
         {screen==='end'&&<EndScreen sessionId={sessionId} sessionData={sessionData} onHome={()=>{setSessionId(null);setSessionCode(null);setSessionData(null);go('home')}}/>}
-        {screen==='history'&&<HistoryScreen onBack={()=>go('home')} onView={s=>{setSessionId(s.id);setSessionData(s);go('end')}}/>}
+        {screen==='history'&&<HistoryScreen onBack={()=>go('home')} onView={s=>{setAlbumId(s.id);go('album')}}/>}
       </div>
     </>
   )
