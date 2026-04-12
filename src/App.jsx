@@ -1130,7 +1130,7 @@ export default function App(){
     const code=generateCode()
     const{data:sess,error}=await supabase.from('sessions').insert({code,config,status:'lobby'}).select().single()
     if(error)throw error
-    const taskList=buildTaskList(config.vibe,config.count,config.customTasks||[],lang, config.occ)
+    const taskList=buildTaskList(config.vibe,config.count,config.customTasks||[],lang,config.occ)
     const taskRows=taskList.map((t,i)=>({
       session_id:sess.id,emoji:t.e,text:t.t,type:'Foto',
       is_golden:t.isGold||false,is_custom:t.isCustom||false,is_trick:t.isTrick||false,
