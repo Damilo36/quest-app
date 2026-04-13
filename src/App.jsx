@@ -253,7 +253,7 @@ function HomeScreen({lang,setLang,onHost,onJoin,onHistory,histCount,onLegal}){
           <FoxLogo size={44}/>
           <span className="disp" style={{fontSize:28,letterSpacing:'-.01em'}}><span style={{color:'var(--lime)'}}>Memo</span>fox</span>
         </div>
-        <div className="fu f1 disp" style={{fontSize:46,lineHeight:1.05,letterSpacing:'-.02em',marginBottom:14}}>
+        <div className="fu f1 disp" style={{fontSize:32,lineHeight:1.1,letterSpacing:'-.02em',marginBottom:14}}>
           {T('tagline').split('\n').map((l,i)=><div key={i} style={i===1?{color:'var(--lime)'}:{}}>{l}</div>)}
         </div>
         <p className="fu f2" style={{color:'var(--muted)',fontSize:15,lineHeight:1.7,marginBottom:50,maxWidth:280}}>
