@@ -1,7 +1,7 @@
 export const T = {
   de: {
     appName: 'Memofox',
-    tagline: 'Make memories.\nProve it happened.',
+    tagline: 'Erinnerungen machen.\nBeweis liefern.',
     sub: 'Photo-Challenges die Menschen zusammenbringen — nicht ans Handy fesseln.',
     startSession: 'Session starten →',
     joinSession: 'Session beitreten',
