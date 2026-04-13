@@ -312,11 +312,11 @@ function SetupScreen({lang,onStart,onBack}){
         {step===0&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>{T('whichOccasion')}</div>
           <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>{T('occasionSub')}</p>
-          <div className="sg fu f2">
+          <div className="fu f2" style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:11}}>
             {OCCASIONS.map(o=>(
-              <div key={o.id} className={`si ${occ===o.id?'on':''}`} onClick={()=>setOcc(o.id)}>
-                <span className="ico">{o.icon}</span>
-                <span className="stx">{typeof o.label==='object'?o.label[lang]||o.label.de:o.label}</span>
+              <div key={o.id} className={`si ${occ===o.id?'on':''}`} onClick={()=>setOcc(o.id)} style={{padding:'18px 12px',borderRadius:'var(--r)'}}>
+                <span className="ico" style={{fontSize:26}}>{o.icon}</span>
+                <span className="stx" style={{fontSize:12}}>{typeof o.label==='object'?o.label[lang]||o.label.de:o.label}</span>
               </div>
             ))}
           </div>
@@ -326,16 +326,21 @@ function SetupScreen({lang,onStart,onBack}){
           <p className="fu f1" style={{color:'var(--muted)',marginBottom:26,fontSize:14}}>{T('vibeSub')}</p>
           <div style={{display:'flex',flexDirection:'column',gap:11}} className="fu f2">
             {VIBES.map(v=>(
-              <div key={v.id} onClick={()=>setVibe(v.id)} style={{padding:'18px 20px',background:vibe===v.id?'var(--ld)':'var(--s1)',border:`1.5px solid ${vibe===v.id?'rgba(198,255,0,.4)':'var(--bdr)'}`,borderRadius:'var(--r)',cursor:'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:14}}>
+              <div key={v.id} onClick={()=>setVibe(v.id)} style={{padding:'18px 20px',background:vibe===v.id?(v.id==='bold'?'rgba(255,79,0,0.08)':'var(--ld)'):'var(--s1)',border:`1.5px solid ${vibe===v.id?(v.id==='bold'?'rgba(255,79,0,0.4)':'rgba(198,255,0,.4)'):'var(--bdr)'}`,borderRadius:'var(--r)',cursor:'pointer',transition:'all .2s',display:'flex',alignItems:'center',gap:14}}>
                 <span style={{fontSize:24}}>{v.icon}</span>
                 <div style={{flex:1}}>
-                  <div className="head" style={{fontSize:15,color:vibe===v.id?'var(--lime)':'var(--white)'}}>{typeof v.label==='object'?v.label[lang]||v.label.de:v.label}</div>
+                  <div className="head" style={{fontSize:15,color:vibe===v.id?(v.id==='bold'?'#FF8C42':'var(--lime)'):'var(--white)'}}>{typeof v.label==='object'?v.label[lang]||v.label.de:v.label}</div>
                   <div style={{fontSize:12,color:'var(--muted)',marginTop:3}}>{typeof v.desc==='object'?v.desc[lang]||v.desc.de:v.desc}</div>
                 </div>
-                {vibe===v.id&&<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 9L7 12.5L14.5 5" stroke="#C6FF00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                {vibe===v.id&&<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 9L7 12.5L14.5 5" stroke={v.id==='bold'?'#FF8C42':'#C6FF00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
             ))}
           </div>
+          {vibe==='bold'&&(
+            <div className="fu" style={{marginTop:14,background:'rgba(255,79,0,0.07)',border:'1px solid rgba(255,79,0,0.22)',borderRadius:'var(--rs)',padding:'12px 16px',fontSize:12,color:'rgba(255,140,66,0.9)',lineHeight:1.6}}>
+              🌶️ {lang==='de'?'Dieser Vibe ist für Erwachsene. Alle Aufgaben sind freiwillig — niemand muss etwas machen das er nicht möchte.':'This vibe is for adults. All tasks are optional — nobody has to do anything they\'re not comfortable with.'}
+            </div>
+          )}
         </div>}
         {step===2&&<div>
           <div className="head fu" style={{fontSize:26,marginBottom:7}}>{T('howMany')}</div>
@@ -577,6 +582,7 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   const[allDone,setAllDone]=useState(false)
   const fileRef=useRef()
   const cameraRef=useRef()
+  const videoRef=useRef()
   const{toasts,add}=useToast()
   const multiAllowed=false // Feature removed
 
@@ -730,6 +736,7 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
               style={{cursor:task.status==='open'&&!hasMyAct?'pointer':'default',animation:`fu .4s ${idx*.025}s cubic-bezier(.16,1,.3,1) both`}}>
               {task.is_golden&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cg" style={{fontSize:10,padding:'3px 8px'}}>{T('goldenTask')}</span></div>}
               {task.is_custom&&!isDone&&<div style={{position:'absolute',top:10,right:10}}><span className="chip cc" style={{fontSize:10,padding:'3px 8px'}}>{T('customTask')}</span></div>}
+              {task.is_video&&!isDone&&!task.is_golden&&!task.is_custom&&<div style={{position:'absolute',top:10,right:10}}><span className="chip" style={{fontSize:10,padding:'3px 8px',background:'rgba(255,79,0,0.1)',borderColor:'rgba(255,79,0,0.3)',color:'#FF8C42'}}>🎬 Video</span></div>}
               <div style={{display:'flex',alignItems:'flex-start',gap:13}}>
                 <span style={{fontSize:24,flexShrink:0,marginTop:1}}>{task.emoji}</span>
                 <div style={{flex:1,paddingRight:(task.is_golden||task.is_custom)&&!isDone?70:0}}>
@@ -771,27 +778,46 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
         </>
       )}
 
-      {/* Upload sheet — Photo REQUIRED */}
+      {/* Upload sheet — Photo or Video */}
       {phase==='upload'&&(
         <>
           <div className="overlay" onClick={()=>setPhase('active')}/>
           <div className="sheet">
             <div className="sh"/>
-            <div className="head" style={{fontSize:21,marginBottom:5}}>{T('uploadTitle')}</div>
-            <p style={{color:'var(--muted)',fontSize:13,marginBottom:20}}>{T('uploadSub')}</p>
-            {/* Camera input - opens directly to camera */}
+            {myActive?.isVideo
+              ?<><div className="head" style={{fontSize:21,marginBottom:5}}>🎬 {lang==='de'?'Video aufnehmen':'Record Video'}</div>
+                <p style={{color:'var(--muted)',fontSize:13,marginBottom:20}}>{lang==='de'?'Max. 30 Sekunden. Beweis dass es passiert ist.':'Max. 30 seconds. Proof that it happened.'}</p></>
+              :<><div className="head" style={{fontSize:21,marginBottom:5}}>{T('uploadTitle')}</div>
+                <p style={{color:'var(--muted)',fontSize:13,marginBottom:20}}>{T('uploadSub')}</p></>
+            }
+            {/* Photo inputs */}
             <input ref={cameraRef} type="file" accept="image/*" capture="environment" style={{display:'none'}}
               onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
-            {/* Gallery input - opens file picker */}
-            <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}}
+            <input ref={fileRef} type="file" accept="image/*,video/*" style={{display:'none'}}
+              onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
+            {/* Video input */}
+            <input ref={videoRef} type="file" accept="video/*" capture="environment" style={{display:'none'}}
               onChange={e=>{const f=e.target.files?.[0];if(f)completeTask(f)}}/>
             <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:16}}>
-              <button onClick={()=>cameraRef.current?.click()} style={{padding:'18px',background:'var(--ld)',border:'2px solid rgba(198,255,0,.25)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--lime)',fontFamily:'Syne',fontWeight:700,fontSize:15,transition:'all .2s'}}>
-                {uploading?<><span className="spin">⟳</span> {T('uploading')}</>:<><span style={{fontSize:24}}>📷</span> {lang==='de'?'Kamera öffnen':'Open Camera'}</>}
-              </button>
-              <button onClick={()=>fileRef.current?.click()} style={{padding:'16px',background:'var(--s2)',border:'1.5px solid var(--bdr2)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--white)',fontFamily:'Syne',fontWeight:600,fontSize:14,transition:'all .2s'}}>
-                <span style={{fontSize:20}}>🖼️</span> {lang==='de'?'Aus Galerie wählen':'Choose from Gallery'}
-              </button>
+              {myActive?.isVideo?(
+                <>
+                  <button onClick={()=>videoRef.current?.click()} style={{padding:'18px',background:'rgba(255,79,0,0.1)',border:'2px solid rgba(255,79,0,0.35)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'#FF8C42',fontFamily:'Syne',fontWeight:700,fontSize:15,transition:'all .2s'}}>
+                    {uploading?<><span className="spin">⟳</span> {T('uploading')}</>:<><span style={{fontSize:24}}>🎬</span> {lang==='de'?'Video aufnehmen':'Record Video'}</>}
+                  </button>
+                  <button onClick={()=>fileRef.current?.click()} style={{padding:'14px',background:'var(--s2)',border:'1.5px solid var(--bdr2)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--muted)',fontFamily:'Syne',fontWeight:600,fontSize:13}}>
+                    <span>🖼️</span> {lang==='de'?'Aus Galerie':'From Gallery'}
+                  </button>
+                </>
+              ):(
+                <>
+                  <button onClick={()=>cameraRef.current?.click()} style={{padding:'18px',background:'var(--ld)',border:'2px solid rgba(198,255,0,.25)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--lime)',fontFamily:'Syne',fontWeight:700,fontSize:15,transition:'all .2s'}}>
+                    {uploading?<><span className="spin">⟳</span> {T('uploading')}</>:<><span style={{fontSize:24}}>📷</span> {lang==='de'?'Kamera öffnen':'Open Camera'}</>}
+                  </button>
+                  <button onClick={()=>fileRef.current?.click()} style={{padding:'16px',background:'var(--s2)',border:'1.5px solid var(--bdr2)',borderRadius:'var(--r)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,color:'var(--white)',fontFamily:'Syne',fontWeight:600,fontSize:14,transition:'all .2s'}}>
+                    <span style={{fontSize:20}}>🖼️</span> {lang==='de'?'Aus Galerie wählen':'Choose from Gallery'}
+                  </button>
+                </>
+              )}
             </div>
             <button onClick={()=>setPhase('active')} className="btn bs" style={{padding:'13px',border:'1px solid var(--bdr2)'}}>{T('back')}</button>
           </div>
@@ -1175,7 +1201,7 @@ export default function App(){
     const taskList=buildTaskList(config.vibe,config.count,config.customTasks||[],lang,config.occ)
     const taskRows=taskList.map((t,i)=>({
       session_id:sess.id,emoji:t.e,text:t.t,type:'Foto',
-      is_golden:t.isGold||false,is_custom:t.isCustom||false,is_trick:t.isTrick||false,
+      is_golden:t.isGold||false,is_custom:t.isCustom||false,is_trick:t.isTrick||false,is_video:t.isVideo||false,
       status:'open',sort_order:i
     }))
     await supabase.from('tasks').insert(taskRows)
