@@ -1,20 +1,18 @@
 // ─── OCCASIONS & VIBES ───────────────────────────────────────────────────────
 export const OCCASIONS = [
-  {id:'birthday', icon:'🎂', label:{de:'Geburtstag',   en:'Birthday'}},
-  {id:'camping',  icon:'🏕️', label:{de:'Camping',      en:'Camping'}},
-  {id:'team',     icon:'🤝', label:{de:'Teambuilding',  en:'Team Event'}},
-  {id:'family',   icon:'👨‍👩‍👧', label:{de:'Familie',      en:'Family'}},
-  {id:'festival', icon:'🎪', label:{de:'Festival',      en:'Festival'}},
-  {id:'wedding',  icon:'💍', label:{de:'Hochzeit',      en:'Wedding'}},
-  {id:'jga',      icon:'🕺', label:{de:'JGA / JGE',     en:'Bachelor/ette'}},
-  {id:'office',   icon:'🏢', label:{de:'Büroparty',     en:'Office Party'}},
-  {id:'meet',     icon:'💛', label:{de:'Kennenlernen',   en:'Meet & Connect'}},
+  {id:'birthday',  icon:'🎂', label:{de:'Geburtstag',        en:'Birthday'}},
+  {id:'celebrate', icon:'💍', label:{de:'Hochzeit & JGA',     en:'Wedding & Bachelor'}},
+  {id:'outdoor',   icon:'🌿', label:{de:'Outdoor',            en:'Outdoor'}},
+  {id:'team',      icon:'💼', label:{de:'Team & Work',        en:'Team & Work'}},
+  {id:'together',  icon:'👥', label:{de:'Familie & Freunde',  en:'Family & Friends'}},
+  {id:'party',     icon:'🎉', label:{de:'Party',              en:'Party'}},
 ]
 
 export const VIBES = [
-  {id:'family', icon:'🌸', label:{de:'Familienfreundlich', en:'Family Friendly'}, desc:{de:'Für alle Altersgruppen', en:'For all ages'}},
-  {id:'chill',  icon:'😎', label:{de:'Chill & Kreativ',    en:'Chill & Creative'}, desc:{de:'Entspannt, trotzdem lustig', en:'Relaxed but fun'}},
-  {id:'party',  icon:'🔥', label:{de:'Party Modus',         en:'Party Mode'}, desc:{de:'Ab hier wird\'s wild', en:'Things get wild'}},
+  {id:'family', icon:'🌸', label:{de:'Für alle',       en:'For Everyone'}, desc:{de:'Alle Altersgruppen, kein Risiko', en:'All ages, no risk'}},
+  {id:'chill',  icon:'😎', label:{de:'Entspannt',      en:'Relaxed'},      desc:{de:'Locker und kreativ', en:'Easy going and creative'}},
+  {id:'party',  icon:'🔥', label:{de:'Party',          en:'Party'},        desc:{de:'Ab hier wird\'s wild', en:'Things get wild'}},
+  {id:'bold',   icon:'🌶️', label:{de:'Mutig',          en:'Bold'},         desc:{de:'Nur für Erwachsene · Freiwillig', en:'Adults only · Always optional'}},
 ]
 
 export const COUNTS = [10, 15, 20, 30, 40, 50]
@@ -63,6 +61,20 @@ export const GOLDEN_POOL = {
     {e:'⭐', t:{de:'Der Moment der in 10 Jahren noch im Gruppenchat auftaucht', en:'The moment that will still appear in the group chat in 10 years'}},
     {e:'⭐', t:{de:'Kreiere spontan den denkwürdigsten Moment des Abends', en:'Spontaneously create the most memorable moment of the evening'}},
     {e:'⭐', t:{de:'Die eine Aufnahme die den ganzen Abend zusammenfasst', en:'The one shot that summarizes the entire evening'}},
+  ],
+  bold: [
+    {e:'⭐', t:{de:'Das mutigste Foto des Abends — du weißt es wenn es passiert', en:'The boldest photo of the evening — you\'ll know it when it happens'}},
+    {e:'⭐', t:{de:'Capture den Moment der heute Abend am meisten Mut gebraucht hat', en:'Capture the moment tonight that required the most courage'}},
+    {e:'⭐', t:{de:'Das Foto das niemand erwartet hat — deshalb unvergesslich', en:'The photo nobody expected — that\'s why it\'s unforgettable'}},
+    {e:'⭐', t:{de:'Der ehrlichste Moment des Abends — ungeplant, ungestellt, echt', en:'The most honest moment of the evening — unplanned, unposed, real'}},
+    {e:'⭐', t:{de:'Das Foto das ihr morgen früh als erstes teilt', en:'The photo you\'ll share first thing tomorrow morning'}},
+    {e:'⭐', t:{de:'Der Moment in dem jemand etwas getan hat das er sonst nie tut', en:'The moment someone did something they never normally do'}},
+    {e:'⭐', t:{de:'Capture die lauteste Reaktion des Abends', en:'Capture the loudest reaction of the evening'}},
+    {e:'⭐', t:{de:'Das Foto das diese Gruppe in ihrem mutigsten Moment zeigt', en:'The photo that shows this group at their boldest'}},
+    {e:'⭐', t:{de:'Der Moment kurz bevor jemand etwas Mutiges tut', en:'The moment just before someone does something bold'}},
+    {e:'⭐', t:{de:'Capture jemanden genau dann wenn er aufgehört hat sich zu verstellen', en:'Capture someone exactly when they stopped pretending'}},
+    {e:'⭐', t:{de:'Das Foto das in 10 Jahren immer noch für Gesprächsstoff sorgt', en:'The photo that will still spark conversation in 10 years'}},
+    {e:'⭐', t:{de:'Der wildeste aber ehrlichste Moment des Abends', en:'The wildest but most honest moment of the evening'}},
   ],
 }
 
@@ -585,6 +597,171 @@ export const GENERIC_TASKS = {
   ],
 }
 
+// ─── INTERACTION TASKS (added to all pools via buildTaskList) ─────────────────
+// 60 tasks that create genuine group interaction — always photo-provable
+export const INTERACTION_TASKS = {
+  family: [
+    // 🏗️ BAUEN & ERSCHAFFEN
+    {e:'🏗️', t:{de:'Baut den höchsten Turm nur aus Sachen die auf dem Tisch liegen — foto das Ergebnis neben dem Erbauer', en:'Build the tallest tower using only things on the table — photo it next to the builder'}},
+    {e:'🍽️', t:{de:'Baut aus Besteck, Gläsern und Servietten eine Brücke — sie muss ein Handy tragen können', en:'Build a bridge from cutlery, glasses and napkins — it must hold a phone'}},
+    {e:'🎨', t:{de:'Schreibt mit eurem Finger auf beschlagenen Fenstern oder Gläsern gemeinsam ein Wort — foto bevor es verschwindet', en:'Write a word together on a fogged window or glass with your fingers — photo before it disappears'}},
+    {e:'🧩', t:{de:'Legt alle Schlüsselringe die ihr findet zu einer Kette zusammen — foto der längsten möglichen Kette', en:'Link all keyrings you can find into one chain — photo the longest possible chain'}},
+    {e:'🗼', t:{de:'Stapelt Münzen so hoch wie möglich — einer hält die Hand daneben als Größenvergleich', en:'Stack coins as high as possible — one person holds their hand next to it for size comparison'}},
+    {e:'🌀', t:{de:'Legt aus allem was ihr in euren Taschen habt ein Muster oder Bild auf dem Tisch', en:'Arrange everything from your pockets into a pattern or picture on the table'}},
+    {e:'🃏', t:{de:'Baut ein Kartenhaus aus Bierdeckeln oder Visitenkarten — wie viele Stockwerke schafft ihr?', en:'Build a card house from coasters or business cards — how many floors can you build?'}},
+    {e:'🍕', t:{de:'Formt aus Servietten gemeinsam ein Tier — foto des fertigen Tieres mit dem Entstehungsteam', en:'Fold napkins together into an animal — photo the finished animal with the creation team'}},
+    // 📐 KÖRPER & GRUPPE
+    {e:'🔤', t:{de:'Formt mit euren Körpern gemeinsam einen Buchstaben — foto von oben oder von der Seite', en:'Form a letter together with your bodies — photo from above or the side'}},
+    {e:'🫂', t:{de:'Alle stehen in einer Reihe, jeder legt beide Hände auf die Schultern der Person vor ihm — foto der ganzen Kette von der Seite', en:'Everyone stands in a line, each places both hands on the shoulders of the person in front — photo the whole chain from the side'}},
+    {e:'🦁', t:{de:'Alle machen gleichzeitig ihre wildeste Löwen-Pose — foto genau in dem Moment', en:'Everyone does their wildest lion pose simultaneously — photo at exactly that moment'}},
+    {e:'🤸', t:{de:'Alle zeigen gleichzeitig ihr flexibelstes Körperteil — foto des chaotischen Ergebnisses', en:'Everyone simultaneously shows their most flexible body part — photo of the chaotic result'}},
+    {e:'👣', t:{de:'Alle stellen einen Fuß in die Mitte — foto von oben — nur Schuhe sichtbar', en:'Everyone puts one foot in the center — photo from above — only shoes visible'}},
+    {e:'🙌', t:{de:'Klatscht alle gleichzeitig — aber mit den Händen der Person neben euch — foto der Verwirrung', en:'Everyone claps simultaneously — but with the hands of the person next to them — photo of the confusion'}},
+    // 🎭 NACHSTELLEN
+    {e:'🖼️', t:{de:'Stellt ein bekanntes Gemälde nach — mit dem was ihr habt. Die Gruppe muss erraten welches', en:'Recreate a famous painting with what you have. The group must guess which one'}},
+    {e:'📺', t:{de:'Stellt eine Werbung nach die jeder kennt — ihr habt 2 Minuten zum Üben', en:'Recreate an advertisement everyone knows — you have 2 minutes to practice'}},
+    {e:'📰', t:{de:'Stellt das Titelbild einer Zeitung nach — findet eine dramatische Pose und einen passenden Aufmacher', en:'Recreate a newspaper front page — find a dramatic pose and a fitting headline'}},
+    {e:'🎬', t:{de:'Friert eine Filmszene ein die alle kennen — komplett eingefroren — foto als wäre es ein Screenshot', en:'Freeze a movie scene everyone knows — completely frozen — photo as if it\'s a screenshot'}},
+  ],
+  chill: [
+    // 🔍 FINDEN & ENTDECKEN
+    {e:'🔍', t:{de:'Findet den kleinsten Gegenstand auf der Location — foto daneben mit einer Münze als Größenvergleich', en:'Find the smallest object at the location — photo next to a coin for size comparison'}},
+    {e:'🌈', t:{de:'Sucht zusammen alle Farben des Regenbogens in der Umgebung — alles muss gleichzeitig ins Foto', en:'Find all rainbow colors in your surroundings together — everything must fit in one photo'}},
+    {e:'🪞', t:{de:'Findet eine unerwartete Spiegelung — Glas, Wasser, Metall — und macht ein Foto nur der Spiegelung', en:'Find an unexpected reflection — glass, water, metal — and photograph only the reflection'}},
+    {e:'🌿', t:{de:'Findet etwas das aussieht wie ein Gesicht — Wand, Gegenstand, Fleck — foto des zufälligen Gesichts', en:'Find something that looks like a face — wall, object, stain — photo of the accidental face'}},
+    {e:'📐', t:{de:'Findet den perfektesten rechten Winkel in der Umgebung — wer findet den exaktesten 90°-Winkel?', en:'Find the most perfect right angle in your surroundings — who finds the most exact 90° angle?'}},
+    {e:'🎯', t:{de:'Findet etwas das zufällig perfekt balanciert — foto vor dem es umfällt', en:'Find something that\'s accidentally perfectly balanced — photo before it falls'}},
+    {e:'🌀', t:{de:'Findet ein Muster das sich wiederholt — Fliesen, Textur, Anordnung — so nah wie möglich fotografiert', en:'Find a repeating pattern — tiles, texture, arrangement — photographed as close as possible'}},
+    {e:'🔭', t:{de:'Sucht den weitesten sichtbaren Punkt von hier — jemand zeigt mit dem Finger darauf — foto', en:'Find the furthest visible point from here — someone points at it — photo'}},
+    // ⏱️ CHALLENGES MIT BEWEIS
+    {e:'⚖️', t:{de:'Wer kann am längsten einen Gegenstand auf dem Kopf balancieren ohne die Hände? Foto auf dem Höhepunkt', en:'Who can balance an object on their head the longest without hands? Photo at the peak moment'}},
+    {e:'🧲', t:{de:'Wer kann die meisten Gegenstände in 60 Sekunden auf einem Tablett stapeln ohne dass etwas fällt?', en:'Who can stack the most objects on a tray in 60 seconds without anything falling?'}},
+    {e:'📏', t:{de:'Schätzt wie viele Schritte es bis zur Tür sind — alle gleichzeitig schätzen, dann messen — foto der Schätzer', en:'Guess how many steps to the door — everyone guesses simultaneously, then measure — photo of the guessers'}},
+    {e:'🎪', t:{de:'Wer schafft es am längsten mit einem Löffel auf der Nase zu balancieren? Foto des Rekordhaltenden', en:'Who can balance a spoon on their nose the longest? Photo of the record holder'}},
+    {e:'🌊', t:{de:'Alle atmen gleichzeitig ein und frieren ein — wer hält am längsten? Foto der roten Gesichter', en:'Everyone breathes in simultaneously and freezes — who holds longest? Photo of the red faces'}},
+    // 🌀 KOMBINIEREN & VERBINDEN
+    {e:'🤝', t:{de:'Verbindet alle Gürtel, Schals oder Kordeln zu einem Seil — wie lang wird es? Foto mit Maßstab', en:'Connect all belts, scarves or cords into a rope — how long does it get? Photo with scale'}},
+    {e:'🪑', t:{de:'Baut aus Stühlen und allem was ihr findet den bequemsten möglichen Sitz — foto der Person die drin sitzt', en:'Build the most comfortable possible seat from chairs and whatever you find — photo of the person sitting in it'}},
+    {e:'📱', t:{de:'Stapelt alle Handys der Gruppe aufeinander — wer hat das älteste? Wer das neueste? Foto des Stapels', en:'Stack all group phones on top of each other — who has the oldest? Newest? Photo of the stack'}},
+    {e:'👟', t:{de:'Sortiert eure Schuhe nach Schuhgröße und fotografiert sie in einer Reihe — von klein nach groß', en:'Sort your shoes by size and photograph them in a row — smallest to largest'}},
+    {e:'🔑', t:{de:'Legt alle Schlüssel aller Anwesenden nebeneinander — wer hat die meisten? Foto des Vergleichs', en:'Lay all keys from everyone present next to each other — who has the most? Photo of the comparison'}},
+  ],
+  party: [
+    // 🏗️ BAUEN & ERSCHAFFEN
+    {e:'🏆', t:{de:'Baut den größten Turm aus Bierflaschen/-dosen — benutzt nichts zum Stützen — foto des höchsten Moments kurz vor dem Einsturz', en:'Build the tallest tower from beer bottles/cans — use nothing to support — photo of the highest moment just before it falls'}},
+    {e:'🎪', t:{de:'Baut eine Halfpipe oder Rampe aus allem was ihr findet — irgendwas muss drüber rollen können', en:'Build a halfpipe or ramp from everything you find — something must be able to roll over it'}},
+    {e:'🗺️', t:{de:'Zeichnet zusammen aus dem Gedächtnis einen Stadtplan eurer Stadt auf einer Serviette — foto des chaotischen Ergebnisses', en:'Draw a map of your city from memory together on a napkin — photo of the chaotic result'}},
+    {e:'🎨', t:{de:'Macht ein Gruppenkunstwerk: jeder zeichnet 10 Sekunden und gibt es weiter — foto des Endresultats', en:'Make a group artwork: everyone draws for 10 seconds and passes it on — photo of the final result'}},
+    {e:'🧱', t:{de:'Baut aus Smarties, Salzstangen oder was sonst da ist ein essbares Kunstwerk — foto vor dem Angriff', en:'Build an edible piece of art from whatever food is available — photo before the attack'}},
+    // ⚡ CHALLENGES
+    {e:'🎯', t:{de:'Wer trifft einen Bierdeckel aus 2 Metern in ein leeres Glas? Jeder hat 3 Versuche — foto des Treffers', en:'Who can flick a coaster into an empty glass from 2 meters? Everyone gets 3 tries — photo of the hit'}},
+    {e:'🌀', t:{de:'Alle drehen sich 10 mal im Kreis, dann müssen sie gerade stehen — foto exakt nach der letzten Drehung', en:'Everyone spins in circles 10 times, then must stand straight — photo exactly after the last spin'}},
+    {e:'⚡', t:{de:'Wer kann am schnellsten sein Handy entsperren ohne hinzuschauen? Alle gleichzeitig — foto der Versuche', en:'Who can unlock their phone fastest without looking? All simultaneously — photo of the attempts'}},
+    {e:'🏄', t:{de:'Wer kann am elegantesten auf einem Bein stehen und gleichzeitig telefonieren? Foto des Würdevollsten', en:'Who can stand most elegantly on one leg while pretending to phone? Photo of the most dignified'}},
+    {e:'🎸', t:{de:'Air Guitar Battle: Jeder spielt 15 Sekunden — die Gruppe kürt den Gewinner — foto des Meisters', en:'Air guitar battle: everyone plays for 15 seconds — the group crowns the winner — photo of the master'}},
+    {e:'🥊', t:{de:'Wer hat den schwächsten Händedruck? Wer den stärksten? Foto des dramatischen Kräftemessens', en:'Who has the weakest handshake? Who the strongest? Photo of the dramatic trial of strength'}},
+    // 🎭 GRUPPENAKTIONEN
+    {e:'📸', t:{de:'Alle springen gleichzeitig — aber verschiedene Sprünge — foto genau wenn alle in der Luft sind', en:'Everyone jumps simultaneously — but different jumps — photo exactly when all are in the air'}},
+    {e:'🤯', t:{de:'Alle machen gleichzeitig das überraschteste Gesicht das sie können — einfrieren — foto', en:'Everyone makes the most surprised face they can simultaneously — freeze — photo'}},
+    {e:'🌊', t:{de:'Mexican Wave: startet sie, macht sie dreimal durch die Gruppe, foto beim dritten Durchgang', en:'Mexican wave: start it, do it three times through the group, photo on the third pass'}},
+    {e:'🎭', t:{de:'Alle stellen sich als dieselbe Person vor: "Hi ich bin [Name]" — findet den überzeugendsten — foto der "Person"', en:'Everyone introduces themselves as the same person: "Hi I\'m [Name]" — find the most convincing — photo'}},
+    {e:'🔊', t:{de:'Alle flüstern gleichzeitig dasselbe Wort so laut wie möglich — foto der verzerrten Gesichter', en:'Everyone whispers the same word as loud as possible simultaneously — photo of the distorted faces'}},
+    // 🌀 KOMBINIEREN & VERBINDEN
+    {e:'💡', t:{de:'Alle Handytaschenlampen an, foto im Dunkeln — nur das Licht sichtbar', en:'All phone flashlights on, photo in the dark — only the light visible'}},
+    {e:'🥂', t:{de:'Baut eine Champagnerpyramide mit Plastikbechern — wie viele Lagen schafft ihr? Foto auf dem Höchststand', en:'Build a champagne pyramid with plastic cups — how many layers? Photo at the maximum'}},
+    {e:'🎪', t:{de:'Synchronisiert alle eure Handywecker auf genau dieselbe Zeit — alle klingeln gleichzeitig — foto der Reaktionen', en:'Sync all phone alarms to exactly the same time — all ring simultaneously — photo of the reactions'}},
+    {e:'📸', t:{de:'STREICH: Überzeuge jemanden ihr braucht ein "offizielles Beweisfoto für eine Aufgabe" — er posiert steif — foto natürlich das posierte Gesicht', en:'PRANK: Convince someone you need an "official proof photo for a task" — they pose stiffly — naturally photo the posed face'}, trick:true},
+    {e:'🏋️', t:{de:'Wer kann das schwerste Ding im Raum heben? Reihum — foto des Gesichtsausdrucks beim Versuch', en:'Who can lift the heaviest thing in the room? Everyone tries — photo of the expression during the attempt'}},
+  ],
+}
+
+// ─── MUTIG TASKS (4th Vibe — bold) ───────────────────────────────────────────
+// Adults only. Always optional. No forced physical contact. No sexual content.
+// Each task: clear photo moment, clear who photographs, clear why it's funny.
+export const MUTIG_TASKS = {
+  // Works across all occasions — mutig is a vibe not a context
+  any: [
+    // REAKTIONS-FOTOS — das Gesicht ist der Witz
+    {e:'😱', t:{de:'Sage jemandem neben dir mit todernster Miene: "Ich muss dir was gestehen." Foto seines Gesichts in den nächsten 3 Sekunden. Dann darfst du dir was ausdenken.', en:'Tell the person next to you with a dead serious face: "I need to confess something." Photo their face in the next 3 seconds. Then you can make something up.'}},
+    {e:'👀', t:{de:'Alle schauen gleichzeitig ohne Vorwarnung dieselbe Person an und frieren ein. Foto der angeschauten Person.', en:'Everyone looks at the same person simultaneously without warning and freezes. Photo of the person being stared at.'}},
+    {e:'🌟', t:{de:'Sage der Person rechts von dir das ehrlichste Kompliment das du über sie denkst. Kein Ausweichen. Foto ihrer Reaktion.', en:'Tell the person to your right the most honest compliment you think about them. No dodging. Photo of their reaction.'}},
+    {e:'🫵', t:{de:'Zeige mit dem Finger auf jemanden und sage laut: "Der da." — dann schweige 5 Sekunden. Foto des angezeigten Gesichts.', en:'Point at someone and say out loud: "That one." — then stay silent for 5 seconds. Photo of their face.'}},
+    {e:'🎭', t:{de:'Überzeuge jemanden du hättest ihn "früher schon mal getroffen" — beschreibe genau wann und wo (alles erfunden). Foto wenn er anfängt nachzudenken.', en:'Convince someone you\'ve "met them before" — describe exactly when and where (all made up). Photo when they start wondering.'}},
+    {e:'🕵️', t:{de:'Beobachte jemanden 60 Sekunden lang intensiv ohne etwas zu sagen. Wenn er fragt was du machst sagst du nur: "Ich analysiere." Foto seines Gesichts nach 30 Sekunden.', en:'Observe someone intensely for 60 seconds without saying anything. If they ask what you\'re doing say only: "I\'m analyzing." Photo of their face after 30 seconds.'}},
+    {e:'📢', t:{de:'Klatsche plötzlich und unerwartet einmal laut in die Hände — mitten in ein Gespräch. Foto aller Gesichter genau in dem Moment. Kamera muss vorher bereit sein.', en:'Suddenly and unexpectedly clap once loudly — in the middle of a conversation. Photo of all faces exactly at that moment. Camera must be ready beforehand.'}},
+    {e:'🎯', t:{de:'Zeige auf einen zufälligen Gegenstand und sage jemandem mit völliger Überzeugung: "Das gehört dir." Foto wenn er anfängt nachzudenken ob es stimmt.', en:'Point at a random object and tell someone with complete conviction: "That belongs to you." Photo when they start wondering if it\'s true.'}},
+    {e:'🔔', t:{de:'Sage jemandem mit absoluter Ernsthaftigkeit: "Ich habe heute schon dreimal an dich gedacht." Keine weiteren Erklärungen. Foto seines Gesichts.', en:'Tell someone with absolute seriousness: "I\'ve thought about you three times today already." No further explanation. Photo of their face.'}},
+    {e:'⏸️', t:{de:'Sage laut "PAUSE" mitten in einem laufenden Gespräch — alle frieren ein wie ein Standbild. Wer zuerst bewegt verliert. Foto des eingefrorenen Moments.', en:'Say "PAUSE" loudly in the middle of an ongoing conversation — everyone freezes like a still image. First to move loses. Photo of the frozen moment.'}},
+    {e:'🪞', t:{de:'Spiegele für 60 Sekunden lang jede Bewegung der Person neben dir — exakt und ohne zu lachen. Foto wenn sie es merkt.', en:'Mirror every movement of the person next to you for 60 seconds — exactly and without laughing. Photo when they notice.'}},
+    {e:'🌡️', t:{de:'Lege einer Person ohne Vorwarnung die Hand auf die Stirn und sage: "Du hast Fieber." Foto ihr Gesicht genau in dem Moment.', en:'Place your hand on someone\'s forehead without warning and say: "You have a fever." Photo their face exactly at that moment.'}},
+
+    // POSE & AUFTRITT — die Person im Rampenlicht
+    {e:'🎲', t:{de:'Die Gruppe einigt sich in 30 Sekunden auf eine Pose für dich. Du hältst sie 10 Sekunden ohne Verhandlung. Foto.', en:'The group agrees on a pose for you in 30 seconds. You hold it for 10 seconds with no negotiation. Photo.'}},
+    {e:'🦁', t:{de:'Steh auf, geh zur Mitte und mach für 5 Sekunden deine wildeste Tier-Pose. Alle anderen frieren ein. Foto.', en:'Stand up, go to the center and make your wildest animal pose for 5 seconds. Everyone else freezes. Photo.'}},
+    {e:'🎨', t:{de:'Zeichne das Porträt der Person gegenüber von dir — 90 Sekunden, mit der falschen Hand. Foto: Zeichnung neben dem Original.', en:'Draw the portrait of the person across from you — 90 seconds, with the wrong hand. Photo: drawing next to the original.'}},
+    {e:'👑', t:{de:'Du wirst von der Gruppe mit allem was sie finden kann dekoriert — Accessoires, Servietten, alles. 60 Sekunden. Foto danach.', en:'The group decorates you with everything they can find — accessories, napkins, anything. 60 seconds. Photo after.'}},
+    {e:'🏆', t:{de:'Nimm die Siegerposen von Olympia, Fußball-WM und Grammy nacheinander ein — je 3 Sekunden. Gruppe wählt welche ins Album kommt.', en:'Do the victory poses of Olympics, Soccer World Cup and Grammy one after another — 3 seconds each. Group chooses which goes in the album.'}},
+    {e:'📸', t:{de:'Du hast 3 Sekunden für dein bestes Modelpose-Foto. Keine Vorbereitung. Sofort auf Kommando. Foto.', en:'You have 3 seconds for your best model pose photo. No preparation. Immediately on command. Photo.'}},
+    {e:'🧍', t:{de:'Stelle dich in die Mitte. Alle anderen positionieren dich wie eine Schaufensterpuppe — Arme, Kopf, Beine. Du machst alles mit. Foto des Ergebnisses.', en:'Stand in the center. Everyone else positions you like a mannequin — arms, head, legs. You comply with everything. Photo of the result.'}},
+    {e:'🎪', t:{de:'Du hast 90 Sekunden um aus allem was auf dem Tisch liegt ein Kostüm für deinen Kopf zu basteln. Gruppe bewertet. Foto.', en:'You have 90 seconds to create a head costume from everything on the table. Group rates it. Photo.'}},
+    {e:'🏛️', t:{de:'Stelle eine bekannte Statue nach — so genau wie möglich, 10 Sekunden einfrieren. Foto Seite an Seite mit der Statue auf einem Handy.', en:'Recreate a famous statue — as accurately as possible, freeze for 10 seconds. Photo side by side with the statue on a phone.'}},
+    {e:'🦊', t:{de:'Stelle dich vor die Gruppe und sage drei Dinge über dich — zwei davon wahr, eines gelogen. Gruppe rät. Foto der rätenden Gesichter.', en:'Stand before the group and say three things about yourself — two true, one false. Group guesses. Photo of the guessing faces.'}},
+    {e:'🎭', t:{de:'Die Gruppe wählt eine Emotion. Du stellst sie für 15 Sekunden mit dem ganzen Körper dar — übertrieben, ohne Worte. Foto auf dem Höhepunkt.', en:'The group chooses an emotion. You represent it with your whole body for 15 seconds — exaggerated, no words. Photo at the peak.'}},
+
+    // SOZIALE MUTPROBEN — beweist dass es wirklich passiert ist
+    {e:'👋', t:{de:'Geh zur nächsten fremden Person außerhalb eurer Gruppe und frag sie nach ihrer ehrlichen Meinung zu Ananas auf Pizza. Foto der Reaktion.', en:'Go to the nearest stranger outside your group and ask their honest opinion on pineapple on pizza. Photo of the reaction.'}},
+    {e:'🤝', t:{de:'Erfinde sofort einen Beruf der nicht existiert und stelle dich damit der Gruppe vor. Erkläre was du machst. Foto der Gesichter.', en:'Immediately invent a profession that doesn\'t exist and introduce yourself with it to the group. Explain what you do. Photo of the faces.'}},
+    {e:'🎤', t:{de:'Kündige laut an: "Ich habe eine Ansage." Warte bis alle schauen. Sage dann etwas völlig Banales mit totaler Ernsthaftigkeit. Foto der Reaktionen.', en:'Announce loudly: "I have an announcement." Wait until everyone looks. Then say something completely banal with total seriousness. Photo of reactions.'}},
+    {e:'📣', t:{de:'Rufe so laut du kannst den Namen einer Person aus der Gruppe — egal wo ihr seid. Foto ihres Gesichts beim Erschrecken. Kamera vorher bereit halten.', en:'Call out someone\'s name from the group as loud as you can — wherever you are. Photo of their face when startled. Camera ready beforehand.'}},
+    {e:'🎵', t:{de:'Summe einen Song aus deiner Kindheit — so lange bis jemand aus der Gruppe ihn erkennt. Foto der Person die ihn zuerst errät beim Erkennen.', en:'Hum a song from your childhood — until someone in the group recognizes it. Photo of the person who guesses it first when they realize.'}},
+    {e:'🤲', t:{de:'Bitte jemanden aus der Gruppe dir etwas beizubringen das er gut kann — in 2 Minuten. Foto des Lehrers beim Erklären und des Schülers beim Versuchen.', en:'Ask someone from the group to teach you something they\'re good at — in 2 minutes. Photo of teacher explaining and student trying.'}},
+    {e:'🎩', t:{de:'Stelle dich einer Person in der Gruppe vor als hättest du einen komplett erfundenen Beruf. Führe das Gespräch 1 Minute durch ohne zu lachen. Foto beider.', en:'Introduce yourself to someone with a completely made-up profession. Keep the conversation going for 1 minute without laughing. Photo of both.'}},
+
+    // KREATIV & WITZIG — das Ergebnis ist der Witz
+    {e:'🃏', t:{de:'Jeder schreibt anonym eine ehrliche Eigenschaft über die Person zu seiner Rechten auf einen Zettel. Einer liest alle vor. Foto der Gesichter beim Vorlesen.', en:'Everyone anonymously writes an honest trait about the person to their right. Someone reads all of them out. Photo of faces while listening.'}},
+    {e:'🔮', t:{de:'Sage jemandem eine Prophezeiung für morgen voraus — so dramatisch und detailliert wie möglich. Foto der Person beim Zuhören.', en:'Predict tomorrow\'s events for someone — as dramatically and in detail as possible. Photo of the person while listening.'}},
+    {e:'📰', t:{de:'Stellt euch so auf als wärt ihr das Titelbild einer Zeitung. Die Headline: "Lokale Gruppe macht Geschichte." Foto.', en:'Pose as if you\'re a newspaper front page. The headline: "Local group makes history." Photo.'}},
+    {e:'🗺️', t:{de:'Alle zeichnen gleichzeitig auf einer Serviette die Umgebung aus dem Gedächtnis — 60 Sekunden. Foto aller Ergebnisse nebeneinander.', en:'Everyone draws their surroundings from memory on a napkin simultaneously — 60 seconds. Photo of all results side by side.'}},
+    {e:'✏️', t:{de:'Alle zeichnen gleichzeitig dasselbe Tier auf einer Serviette — 45 Sekunden. Foto aller Ergebnisse nebeneinander.', en:'Everyone draws the same animal on a napkin simultaneously — 45 seconds. Photo of all results side by side.'}},
+    {e:'📖', t:{de:'Jeder schreibt in 30 Sekunden den ersten Satz eines Romans über diesen Abend. Einer liest alle vor. Foto der Gesichter beim Lachen.', en:'Everyone writes the first sentence of a novel about this evening in 30 seconds. Someone reads all of them out. Photo of faces laughing.'}},
+    {e:'🏷️', t:{de:'Jeder bekommt einen Post-it auf der Stirn mit einem Wort das die Person links aufgeschrieben hat. Alle sehen was die anderen haben — nicht sich selbst. Foto aller.', en:'Everyone gets a post-it on their forehead with a word written by the person to their left. Everyone sees what others have — not themselves. Photo of all.'}},
+    {e:'🌀', t:{de:'Alle zeigen gleichzeitig ihr Handysperrbildschirm-Foto. Wer hat das interessanteste? Gruppe entscheidet. Foto der angehobenen Handys.', en:'Everyone shows their phone lock screen photo simultaneously. Who has the most interesting? Group decides. Photo of all raised phones.'}},
+    {e:'🗣️', t:{de:'Die Gruppe erfindet gemeinsam in 2 Minuten einen Firmennamen, ein Produkt und einen Slogan für etwas völlig Sinnloses. Foto des aufgeschriebenen Ergebnisses.', en:'The group invents together in 2 minutes a company name, product and slogan for something completely pointless. Photo of the written result.'}},
+
+    // VIDEO-AUFGABEN (max 2 in einer Session)
+    {e:'🎬', t:{de:'Du hast 45 Sekunden um eine Szene aus einem Film nachzuspielen — allein, ohne Hilfsmittel. Die Gruppe rät welchen Film. VIDEO.', en:'You have 45 seconds to act out a movie scene — alone, without props. The group guesses which film. VIDEO.'}, isVideo:true},
+    {e:'🎬', t:{de:'Erkläre wie man Schuhe bindet — aber so als wärst du ein Geheimagent der eine hochriskante Mission erklärt. 30 Sekunden. VIDEO.', en:'Explain how to tie shoelaces — but as if you\'re a secret agent explaining a high-risk mission. 30 seconds. VIDEO.'}, isVideo:true},
+
+    // STREICH-AUFGABEN
+    {e:'😱', t:{de:'STREICH: Sage jemandem mit ruhiger Stimme: "Wir müssen kurz reden." — Führe ihn zur Seite. Sage dann: "Du bist echt cool heute." Foto sein Gesicht beim Hinführen.', en:'PRANK: Tell someone calmly: "We need to talk for a second." — Lead them aside. Then say: "You\'re really cool today." Photo their face while being led aside.'}, trick:true},
+    {e:'🤫', t:{de:'STREICH: Flüstere jemandem zu: "Ich glaube die reden gerade über dich" — zeige unauffällig auf eine zufällige Gruppe. Foto sein Gesicht beim Hinschauen.', en:'PRANK: Whisper to someone: "I think they\'re talking about you right now" — subtly point at a random group. Photo their face while looking over.'}, trick:true},
+    {e:'📸', t:{de:'STREICH: Sage jemandem du brauchst dringend ein "ernstes Bewerbungsfoto" von ihm — jetzt, sofort. Foto wenn er anfängt ernsthaft zu posieren.', en:'PRANK: Tell someone you urgently need a "serious CV photo" of them — right now. Photo when they start seriously posing.'}, trick:true},
+    {e:'🕐', t:{de:'STREICH: Überzeuge jemanden es sei bereits eine Stunde später als es ist. Foto wenn er auf sein Handy schaut um es zu prüfen.', en:'PRANK: Convince someone it\'s already an hour later than it is. Photo when they check their phone to verify.'}, trick:true},
+    {e:'🏃', t:{de:'STREICH: Steh plötzlich auf und schau angestrengt in eine Richtung. Sage nichts. Foto aller die instinktiv auch hinschauen.', en:'PRANK: Suddenly stand up and stare intently in one direction. Say nothing. Photo of everyone who instinctively looks too.'}, trick:true},
+  ]
+}
+
+// ─── OCCASION ALIASES for new 6-category structure ───────────────────────────
+// Maps new occasion IDs to existing task pools
+function getOccasionPool(occasion, vibe) {
+  // Direct matches
+  if (OCCASION_TASKS[`${occasion}_${vibe}`]) return [...OCCASION_TASKS[`${occasion}_${vibe}`]]
+  // Aliases: new IDs → old pool combinations
+  const aliases = {
+    'celebrate': ['wedding', 'jga'],    // Hochzeit & JGA
+    'outdoor':   ['camping', 'festival'], // Outdoor
+    'team':      ['team', 'office'],     // Team & Work
+    'together':  ['family', 'meet'],     // Familie & Freunde
+    'party':     ['birthday', 'family'], // Party Wildcard — mixed
+  }
+  if (aliases[occasion]) {
+    return aliases[occasion].flatMap(occ =>
+      OCCASION_TASKS[`${occ}_${vibe}`] ? [...OCCASION_TASKS[`${occ}_${vibe}`]] : []
+    )
+  }
+  return []
+}
+
 // ─── FLASH CHALLENGES ─────────────────────────────────────────────────────────
 export const FLASH_CHALLENGES = {
   de: [
@@ -648,14 +825,15 @@ export const QUOTES = {
 // ─── BUILD TASK LIST ──────────────────────────────────────────────────────────
 export function buildTaskList(vibe, count, customTasks = [], lang = 'de', occasion = 'birthday') {
 
-  // 1. Get occasion-specific pool
-  const occasionKey = `${occasion}_${vibe}`
-  const occasionPool = OCCASION_TASKS[occasionKey]
-    ? [...OCCASION_TASKS[occasionKey]]
-    : []
+  // 1. Get occasion-specific pool — handles both old and new category IDs
+  const occasionPool = getOccasionPool(occasion, vibe === 'bold' ? 'party' : vibe)
 
-  // 2. Get generic fallback pool
-  const genericPool = [...(GENERIC_TASKS[vibe] || GENERIC_TASKS.party)]
+  // 2. Generic + interaction pool
+  const baseVibe = vibe === 'bold' ? 'party' : vibe
+  const genericPool = [
+    ...(GENERIC_TASKS[baseVibe] || GENERIC_TASKS.party),
+    ...(INTERACTION_TASKS[baseVibe] || INTERACTION_TASKS.party),
+  ]
 
   // 3. Get golden task
   const goldenPool = GOLDEN_POOL[vibe] || GOLDEN_POOL.party
@@ -665,24 +843,52 @@ export function buildTaskList(vibe, count, customTasks = [], lang = 'de', occasi
     t: typeof goldenRaw.t === 'object' ? (goldenRaw.t[lang] || goldenRaw.t.de) : goldenRaw.t,
     isGold: true,
     isTrick: false,
+    isVideo: false,
   }
 
   // 4. Format custom tasks
   const customFormatted = customTasks
     .filter(t => t.trim())
-    .map(t => ({e:'✏️', t: t.trim(), isCustom: true, isTrick: false}))
+    .map(t => ({e:'✏️', t: t.trim(), isCustom: true, isTrick: false, isVideo: false}))
 
-  // 5. Shuffle both pools
+  // 5. Bold vibe — use MUTIG_TASKS instead
+  if (vibe === 'bold') {
+    const mutPool = [...(MUTIG_TASKS.any || [])]
+    const tricks = mutPool.filter(t => t.trick)
+    const videos = mutPool.filter(t => t.isVideo)
+    const normals = mutPool.filter(t => !t.trick && !t.isVideo)
+
+    const totalNeeded = count - 1 - customFormatted.length
+    const maxTricks = Math.max(1, Math.floor(totalNeeded * 0.18))
+    const maxVideos = Math.min(2, Math.floor(totalNeeded * 0.1)) // max 2 videos
+    const tricksToUse = tricks.sort(() => Math.random() - 0.5).slice(0, maxTricks)
+    const videosToUse = videos.sort(() => Math.random() - 0.5).slice(0, maxVideos)
+    const normalsToUse = normals.sort(() => Math.random() - 0.5).slice(0, totalNeeded - tricksToUse.length - videosToUse.length)
+
+    const formatMutig = (t) => ({
+      e: t.e,
+      t: typeof t.t === 'object' ? (t.t[lang] || t.t.de) : t.t,
+      isTrick: t.trick || false,
+      isCustom: false,
+      isGold: false,
+      isVideo: t.isVideo || false,
+    })
+
+    const finalList = [...tricksToUse, ...videosToUse, ...normalsToUse]
+      .map(formatMutig)
+      .sort(() => Math.random() - 0.5)
+
+    return [golden, ...customFormatted, ...finalList]
+  }
+
+  // 6. Standard vibes — shuffle pools
   const shuffledOccasion = occasionPool.sort(() => Math.random() - 0.5)
   const shuffledGeneric = genericPool.sort(() => Math.random() - 0.5)
-
-  // 6. Combine: occasion tasks first, then generic as fill
   const combined = [...shuffledOccasion, ...shuffledGeneric]
 
-  // 7. Separate tricks — max 15% of session
+  // 7. Separate tricks — max 15%
   const tricks = combined.filter(t => t.trick)
   const normals = combined.filter(t => !t.trick)
-
   const totalNeeded = count - 1 - customFormatted.length
   const maxTricks = Math.max(1, Math.floor(totalNeeded * 0.15))
   const tricksToUse = tricks.slice(0, maxTricks)
@@ -695,6 +901,7 @@ export function buildTaskList(vibe, count, customTasks = [], lang = 'de', occasi
     isTrick: t.trick || false,
     isCustom: false,
     isGold: false,
+    isVideo: false,
   })
 
   const finalList = [...tricksToUse.map(formatTask), ...normalsToUse.map(formatTask)]
