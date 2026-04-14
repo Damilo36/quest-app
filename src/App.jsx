@@ -667,7 +667,8 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
             return updated
           })
           // Live Photo Flash — new photo from ANOTHER player appears fullscreen for 3s
-          if(p.new.status==='done'&&p.new.photo_url&&p.new.claimed_by!==myParticipantId){
+          // ⚠️ Streiche (tricks) are EXCLUDED — they're the big reveal at the end
+          if(p.new.status==='done'&&p.new.photo_url&&p.new.claimed_by!==myParticipantId&&!p.new.is_trick){
             setFlashPhoto({url:p.new.photo_url,name:p.new.claimed_by_nickname||'?',text:p.new.text||''})
             setFlashVisible(true)
             setTimeout(()=>setFlashVisible(false),3200)
@@ -685,6 +686,44 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   },[sessionId])
 
   const myActive=tasks.find(t=>t.claimed_by===myParticipantId&&t.status==='active')
+
+  // ── TASK TIMEOUT: auto-release after 2 minutes ─────────────────────────────
+  useEffect(()=>{
+    if(!sessionId)return
+    const interval=setInterval(async()=>{
+      const twoMinAgo=new Date(Date.now()-2*60*1000).toISOString()
+      // Find all active tasks that have been claimed for more than 2 minutes
+      const{data:stale}=await supabase.from('tasks')
+        .select('id,claimed_by_nickname')
+        .eq('session_id',sessionId)
+        .eq('status','active')
+        .lt('updated_at',twoMinAgo)
+      if(stale&&stale.length>0){
+        for(const t of stale){
+          await supabase.from('tasks').update({status:'open',claimed_by:null,claimed_by_nickname:null}).eq('id',t.id)
+          setTasks(prev=>prev.map(x=>x.id===t.id?{...x,status:'open',claimed_by:null,claimed_by_nickname:null}:x))
+          if(t.claimed_by_nickname){
+            add(lang==='de'?`Aufgabe von ${t.claimed_by_nickname} freigegeben (Timeout)`:`Task from ${t.claimed_by_nickname} released (timeout)`,'⏰','#FF8C00')
+          }
+          // If it was MY active task — reset local state
+          if(activeId===t.id){setActiveId(null);setPhase('list')}
+        }
+      }
+    },30000) // check every 30s
+    return()=>clearInterval(interval)
+  },[sessionId,activeId])
+
+  // ── AUTO END: if host and all tasks done → go to end ──────────────────────
+  useEffect(()=>{
+    if(isHost&&tasks.length>0&&tasks.every(t=>t.status==='done')){
+      // Small delay so the last photo flash shows first
+      setTimeout(async()=>{
+        await supabase.from('sessions').update({status:'ended'}).eq('id',sessionId)
+        onSaveSession(sessionId)
+        onEnd()
+      },3500)
+    }
+  },[tasks])
 
   const pickTask=async(task)=>{
     if(task.status!=='open'||myActive)return
@@ -739,6 +778,12 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
       }).eq('id',activeId)
       setTasks(prev=>prev.map(t=>t.id===activeId?{...t,status:'done',photo_url:photoUrl,claimed_by_nickname:myNickname}:t))
       const ns=streak+1;setStreak(ns)
+      // Secret: when streak hits 3 — show a personal crown moment only on this device
+      if(ns===3){
+        setFlashPhoto({url:photoUrl||'',name:myNickname,text:lang==='de'?'🔥 3er Streak — du bist auf Feuer!':'🔥 3 in a row — you\'re on fire!',isMine:true})
+        setFlashVisible(true)
+        setTimeout(()=>setFlashVisible(false),2800)
+      }
       add(ns>=3?T('streakMsg',ns):T('completedMsg',(task?.text||'').slice(0,26)),avatarLetter(myNickname),myColor||'#C6FF00')
       setActiveId(null);setPhase('list')
     }catch(e){console.error(e);add(lang==='de'?'Upload fehlgeschlagen':'Upload failed','✗','#FF4040')}
@@ -1131,7 +1176,7 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
         }
         {albumName && <div className="disp" style={{fontSize:16,color:'var(--muted)',marginBottom:4}}>{T('whatANight')}</div>}
         <p style={{color:'var(--muted)',fontSize:15}}>{T('albumReady')}</p>
-        {hostName && <p style={{color:'var(--muted)',fontSize:12,marginTop:4}}>Host: {hostName}</p>}
+        {hostName && <p style={{color:'rgba(198,255,0,.6)',fontSize:12,marginTop:6,fontFamily:'Syne',fontWeight:600}}>🦊 Host: {hostName}</p>}
       </div>
 
       {/* Stats */}
@@ -1177,14 +1222,20 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
               {lang==='de'?`${trickCompletions.filter(c=>c.photo_url).length} Streich${trickCompletions.filter(c=>c.photo_url).length>1?'e':''} enthüllt!`:`${trickCompletions.filter(c=>c.photo_url).length} prank${trickCompletions.filter(c=>c.photo_url).length>1?'s':''} revealed!`}
             </span>
           </div>
-          <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:16}}>
             {trickCompletions.filter(c=>c.photo_url).map((c,i)=>(
               <div key={i}>
-                <div style={{borderRadius:12,overflow:'hidden',aspectRatio:'4/3',marginBottom:8}}>
+                <div style={{borderRadius:12,overflow:'hidden',aspectRatio:'4/3',marginBottom:10}}>
                   <img src={c.photo_url} alt="" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                 </div>
-                <div style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>
-                  <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname||'Anonym'}</strong> — {lang==='de'?'hatte keine Ahnung 😂':'had no idea 😂'}
+                <div style={{fontSize:11,color:'rgba(255,179,0,.65)',fontFamily:'Syne',fontWeight:600,textTransform:'uppercase',letterSpacing:'.06em',marginBottom:4}}>
+                  🎭 {lang==='de'?'Der Streich':'The Prank'}
+                </div>
+                <div style={{fontSize:13,color:'var(--white)',lineHeight:1.5,marginBottom:6}}>
+                  {c.text}
+                </div>
+                <div style={{fontSize:12,color:'var(--muted)'}}>
+                  <strong style={{color:'var(--gold)'}}>{c.claimed_by_nickname||'Anonym'}</strong> {lang==='de'?'— hatte keine Ahnung 😂':'— had no idea 😂'}
                 </div>
               </div>
             ))}
