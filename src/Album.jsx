@@ -118,24 +118,27 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
   const noPhotos = completions.filter(c => !c.photo_url)
   const quote = getQuote(lang)
 
-  const downloadPhoto = async (url, name) => {
+  const downloadPhoto = async (url, photoData) => {
+    // Build meaningful filename: memofox-PlayerName-TaskSnippet.jpg
+    const player = (photoData?.claimed_by_nickname || 'foto').replace(/[^a-zA-ZäöüÄÖÜ0-9]/g, '-').slice(0,20)
+    const taskSnippet = (photoData?.text || '').split(' ').slice(0,4).join('-').replace(/[^a-zA-ZäöüÄÖÜ0-9-]/g, '').slice(0,30)
+    const filename = `memofox-${player}${taskSnippet ? '-'+taskSnippet : ''}.jpg`
     try {
       const res = await fetch(url, { mode: 'cors' })
       const blob = await res.blob()
       const bUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = bUrl; a.download = name || 'memofox-foto.jpg'; a.click()
+      a.href = bUrl; a.download = filename; a.click()
       setTimeout(() => URL.revokeObjectURL(bUrl), 2000)
     } catch {
-      // Fallback: open in new tab
       window.open(url, '_blank')
     }
   }
 
   const downloadAll = async () => {
     for (let i = 0; i < photosOnly.length; i++) {
-      await downloadPhoto(photosOnly[i].photo_url, `memofox-${i + 1}.jpg`)
-      await new Promise(r => setTimeout(r, 400)) // Stagger downloads
+      await downloadPhoto(photosOnly[i].photo_url, photosOnly[i])
+      await new Promise(r => setTimeout(r, 400))
     }
   }
 
@@ -155,7 +158,7 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
       {lightbox && (
         <div className="lightbox" onClick={() => setLightbox(null)}>
           <button className="lb-close" onClick={() => setLightbox(null)}>✕</button>
-          <button onClick={() => downloadPhoto(lightbox.url, 'memofox-foto.jpg')} style={{ position: 'absolute', top: 20, right: 72, width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s' }}>💾</button>
+          <button onClick={() => downloadPhoto(lightbox.url, lightbox.photoData)} style={{ position: 'absolute', top: 20, right: 72, width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,.1)', border: 'none', color: 'white', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .2s' }}>💾</button>
           <img className="lb-img" src={lightbox.url} alt="" onClick={e => e.stopPropagation()} />
           <div className="lb-caption">{lightbox.caption}</div>
         </div>
@@ -214,13 +217,13 @@ export default function Album({ sessionId, lang = 'de', onBack }) {
               <div className="grid" style={{ marginBottom: 32 }}>
                 {photosOnly.map((c, i) => (
                   <div key={c.id} className="mem" style={{ animation: `fu .45s ${i * .05}s cubic-bezier(.16,1,.3,1) both` }}>
-                    <div className="mem-img" onClick={() => setLightbox({ url: c.photo_url, caption: `${c.claimed_by_nickname || 'Anonym'} — ${c.text}` })}>
+                    <div className="mem-img" onClick={() => setLightbox({ url: c.photo_url, caption: `${c.claimed_by_nickname || 'Anonym'} — ${c.text}`, photoData: c })}>
                       <img src={c.photo_url} alt={c.text} />
                       <div className="mem-tag">{c.claimed_by_nickname || 'Anonym'}</div>
                       {c.is_trick && <div className="trick-badge">🎭 {lang === 'de' ? 'Streich' : 'Prank'}</div>}
                       {/* Download button */}
                       <button
-                        onClick={e => { e.stopPropagation(); downloadPhoto(c.photo_url, `memofox-${c.claimed_by_nickname || 'foto'}.jpg`) }}
+                        onClick={e => { e.stopPropagation(); downloadPhoto(c.photo_url, c) }}
                         style={{ position: 'absolute', bottom: 10, right: 10, width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,.65)', border: '1px solid rgba(255,255,255,.2)', color: 'white', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
                       >💾</button>
                     </div>
