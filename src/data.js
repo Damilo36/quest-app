@@ -80,7 +80,7 @@ export const GOLDEN_POOL = {
 // ─── OCCASION × VIBE TASK POOLS ───────────────────────────────────────────────
 // QUALITY STANDARD applied to every single task:
 // 1. Clear trigger → predictable moment → unambiguous photo
-// 2. Creates a moment that wouldn't exist without Memofox
+// 2. Creates a moment that wouldn\'t exist without Memofox
 // 3. You can see the photo in your head before taking it
 // 4. The photo is worth showing in 10 years
 export const OCCASION_TASKS = {
@@ -463,14 +463,14 @@ export const OCCASION_TASKS = {
 // Used across all occasions as fill — same quality bar as occasion tasks
 export const GENERIC_TASKS = {
   family: [
-    {e:'🤗', t:{de:'Umarme jemanden den du heute noch nicht umarmt hast — halte genau 5 Sekunden — foto beider Gesichter beim Loslassen.', en:'Hug someone you haven't hugged today — hold for exactly 5 seconds — photo of both faces when letting go.'}},
+    {e:'🤗', t:{de:'Umarme jemanden den du heute noch nicht umarmt hast — halte genau 5 Sekunden — foto beider Gesichter beim Loslassen.', en:'Hug someone you haven\'t hugged today — hold for exactly 5 seconds — photo of both faces when letting go.'}},
     {e:'🎨', t:{de:'Zeichne eine Person in 60 Sekunden auf einer Serviette — mit der falschen Hand. Sie bekommt das Bild. Foto: Zeichnung neben dem Original.', en:'Draw a person in 60 seconds on a napkin — wrong hand. They keep it. Photo: drawing next to the original.'}},
     {e:'🎵', t:{de:'Bring 4 Personen dazu gleichzeitig denselben Song zu summen — ohne vorher zu sagen welchen. Foto der summenden Gesichter.', en:'Get 4 people to hum the same song simultaneously — without saying which one first. Photo of the humming faces.'}},
     {e:'📸', t:{de:'STREICH: Sag jemandem er habe "etwas im Gesicht" — Kamera vorher bereit — foto den Gesichtsausdruck wenn er anfängt zu suchen.', en:'PRANK: Tell someone they have "something on their face" — camera ready — photo the expression when they start searching.'}, trick:true},
     {e:'🥂', t:{de:'Spontaner Toast — alle heben gleichzeitig ihr Glas. Foto genau wenn alle Gläser in der Luft sind.', en:'Spontaneous toast — everyone raises their glass simultaneously. Photo exactly when all glasses are in the air.'}},
     {e:'🤝', t:{de:'Erfinde mit jemandem in 2 Minuten einen einzigartigen Handshake — zeigt ihn der Gruppe. Foto während der Vorführung.', en:'Invent a unique handshake with someone in 2 minutes — show it to the group. Photo during the demonstration.'}},
     {e:'🌺', t:{de:'Schenke jemandem ein echtes Kompliment auf einer Serviette — aufschreiben, falten, feierlich überreichen. Foto der Reaktion beim Lesen.', en:'Give someone a genuine compliment on a napkin — write it, fold it, present ceremoniously. Photo of the reaction while reading.'}},
-    {e:'🦋', t:{de:'Foto der Hände von 4 verschiedenen Personen übereinandergelegt — von oben fotografiert. Nur Hände im Bild.', en:'Photo of 4 different people's hands stacked — photographed from above. Only hands in the frame.'}},
+    {e:'🦋', t:{de:'Foto der Hände von 4 verschiedenen Personen übereinandergelegt — von oben fotografiert. Nur Hände im Bild.', en:'Photo of 4 different people\'s hands stacked — photographed from above. Only hands in the frame.'}},
     {e:'🌟', t:{de:'Finde etwas Schönes das die meisten heute Abend nie bemerkt haben. Zeige es danach allen. Foto davon.', en:'Find something beautiful that most people never noticed tonight. Show everyone afterwards. Photo of it.'}},
     {e:'🧡', t:{de:'Foto von zwei Personen die sich gerade wirklich amüsieren — nicht gestellt. Warte auf den echten Moment.', en:'Photo of two people genuinely having fun — not posed. Wait for the real moment.'}},
     {e:'💡', t:{de:'Finde in der Umgebung etwas das wie ein Gesicht aussieht — Steckdose, Wand, Möbel. Foto des zufälligen Gesichts.', en:'Find something in the surroundings that looks like a face — socket, wall, furniture. Photo of the accidental face.'}},
@@ -482,11 +482,11 @@ export const GENERIC_TASKS = {
   chill: [
     {e:'🌅', t:{de:'Das beste Licht des Abends — warte geduldig bis es kommt — dann eine einzige Aufnahme. Kein zweiter Versuch.', en:'The best light of the evening — wait patiently until it comes — then one single shot. No second attempt.'}},
     {e:'✨', t:{de:'Capture den Moment der am meisten nach einem Filmstill aussieht — echter Moment, kein Posieren.', en:'Capture the moment that looks most like a movie still — real moment, no posing.'}},
-    {e:'🌙', t:{de:'Das Foto das wie ein Albumcover einer unbekannten Band aussieht — du erkennst es wenn du es siehst.', en:'The photo that looks like an album cover of an unknown band — you'll recognize it when you see it.'}},
-    {e:'🕵️', t:{de:'Mach ein natürlich wirkendes Foto von jemandem ohne dass er es merkt — warte bis er vergessen hat dass Fotos gemacht werden.', en:'Take a naturally-looking photo of someone without them noticing — wait until they've forgotten that photos are being taken.'}},
-    {e:'🌊', t:{de:'Foto von jemandem der gerade wirklich in Gedanken versunken ist — nicht stören, nicht husten, nicht auf sich aufmerksam machen.', en:'Photo of someone genuinely lost in thought — don't disturb, don't cough, don't draw attention to yourself.'}},
+    {e:'🌙', t:{de:'Das Foto das wie ein Albumcover einer unbekannten Band aussieht — du erkennst es wenn du es siehst.', en:'The photo that looks like an album cover of an unknown band — you\'ll recognize it when you see it.'}},
+    {e:'🕵️', t:{de:'Mach ein natürlich wirkendes Foto von jemandem ohne dass er es merkt — warte bis er vergessen hat dass Fotos gemacht werden.', en:'Take a naturally-looking photo of someone without them noticing — wait until they\'ve forgotten that photos are being taken.'}},
+    {e:'🌊', t:{de:'Foto von jemandem der gerade wirklich in Gedanken versunken ist — nicht stören, nicht husten, nicht auf sich aufmerksam machen.', en:'Photo of someone genuinely lost in thought — don\'t disturb, don\'t cough, don\'t draw attention to yourself.'}},
     {e:'🎯', t:{de:'Finde etwas das in dieser Umgebung deplatziert wirkt. Foto nur davon — kein Kontext, nur das Objekt.', en:'Find something that looks out of place in this environment. Photo of just that — no context, just the object.'}},
-    {e:'📸', t:{de:'STREICH: "Ich mache ein atmosphärisches Langzeit-Porträt von dir — steh 2 Minuten absolut still." Foto nach 20 Sekunden.', en:'PRANK: "I'm taking an atmospheric long-exposure portrait — stand absolutely still for 2 minutes." Photo after 20 seconds.'}, trick:true},
+    {e:'📸', t:{de:'STREICH: "Ich mache ein atmosphärisches Langzeit-Porträt von dir — steh 2 Minuten absolut still." Foto nach 20 Sekunden.', en:'PRANK: "I\'m taking an atmospheric long-exposure portrait — stand absolutely still for 2 minutes." Photo after 20 seconds.'}, trick:true},
     {e:'🌀', t:{de:'Finde ein Muster das sich in der Umgebung wiederholt — Fliesen, Texturen, Formen. So nah wie möglich fotografiert.', en:'Find a repeating pattern in the surroundings — tiles, textures, shapes. Photographed as close as possible.'}},
     {e:'🍃', t:{de:'Etwas das du schön findest aber andere heute Abend vielleicht nicht sehen. Foto davon. Zeige und erkläre es danach.', en:'Something you find beautiful that others might not see tonight. Photo of it. Show and explain it afterwards.'}},
     {e:'🌺', t:{de:'Das schönste zufällige Bild des Abends — nicht gesucht, nicht geplant. Halte die Kamera bereit und warte.', en:'The most beautiful accidental image of the evening — not searched for, not planned. Keep the camera ready and wait.'}},
@@ -494,12 +494,12 @@ export const GENERIC_TASKS = {
     {e:'🔮', t:{de:'Finde den geheimnisvollsten Winkel dieser Location. Foto der reinen Atmosphäre — keine Menschen.', en:'Find the most mysterious corner of this location. Photo of pure atmosphere — no people.'}},
     {e:'🌸', t:{de:'Das Porträt der Person gegenüber so wie sie wirklich ist — nicht für die Kamera. Warte auf den einen echten Moment.', en:'The portrait of the person across from you as they really are — not for the camera. Wait for the one real moment.'}},
     {e:'💡', t:{de:'Finde etwas das zufällig perfekt balanciert oder symmetrisch ist. Foto bevor es sich verändert.', en:'Find something accidentally perfectly balanced or symmetrical. Photo before it changes.'}},
-    {e:'✨', t:{de:'Das Foto das du in 5 Jahren noch suchst um diesen Abend zu erklären. Du hast genau diese Nacht dafür.', en:'The photo you'll still be looking for in 5 years to explain this evening. You have exactly this night for it.'}},
+    {e:'✨', t:{de:'Das Foto das du in 5 Jahren noch suchst um diesen Abend zu erklären. Du hast genau diese Nacht dafür.', en:'The photo you\'ll still be looking for in 5 years to explain this evening. You have exactly this night for it.'}},
   ],
   party: [
     {e:'🎤', t:{de:'Halte eine 30-Sekunden-Lobrede auf einen zufälligen Gegenstand im Raum — so überzeugend wie möglich. Foto der Gesichter beim Zuhören.', en:'Give a 30-second speech praising a random object in the room — as convincingly as possible. Photo of the faces while listening.'}},
     {e:'🌋', t:{de:'Überzeuge jemanden mit dir gleichzeitig den schlechtesten Witz zu erzählen — beide gleichzeitig. Foto der Gesichter danach.', en:'Convince someone to tell the worst joke with you simultaneously — both at once. Photo of the faces afterwards.'}},
-    {e:'📞', t:{de:'Ruf jemanden an der nicht da ist — erkläre ihm in 10 Sekunden was er verpasst. Auf Lautsprecher. Foto der Gruppe dabei.', en:'Call someone who isn't there — explain in 10 seconds what they're missing. On speakerphone. Photo of the group during.'}},
+    {e:'📞', t:{de:'Ruf jemanden an der nicht da ist — erkläre ihm in 10 Sekunden was er verpasst. Auf Lautsprecher. Foto der Gruppe dabei.', en:'Call someone who isn\'t there — explain in 10 seconds what they\'re missing. On speakerphone. Photo of the group during.'}},
     {e:'🎲', t:{de:'Lass die Person die du am wenigsten kennst dein nächstes Getränk auswählen. Foto wenn du es bekommst.', en:'Let the person you know least choose your next drink. Photo when you receive it.'}},
     {e:'🏆', t:{de:'Überzeuge die ganze Gruppe dir gleichzeitig zu applaudieren — mit echter Begründung. Foto des Applauses.', en:'Get the whole group to applaud you simultaneously — with a genuine justification. Photo of the applause.'}},
     {e:'👑', t:{de:'Lass dich von 3 verschiedenen Personen gleichzeitig mit je einem Gegenstand krönen. Foto des Ergebnisses von vorne.', en:'Get 3 different people to simultaneously crown you each with one object. Photo of the result from the front.'}},
@@ -593,7 +593,7 @@ export const INTERACTION_TASKS = {
 
 // ─── MUTIG TASKS (4th Vibe — bold) ───────────────────────────────────────────
 // Adults only. Always optional. No forced physical contact. No sexual content.
-// Each task: clear photo moment, clear who photographs, clear why it's funny.
+// Each task: clear photo moment, clear who photographs, clear why it\'s funny.
 export const MUTIG_TASKS = {
   // Works across all occasions — mutig is a vibe not a context
   any: [
