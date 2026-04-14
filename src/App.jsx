@@ -396,6 +396,9 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
   const T=(k,...a)=>tr(k,lang,...a)
   const[parts,setParts]=useState([])
   const[copied,setCopied]=useState(false)
+  const[hostName,setHostName]=useState('')
+  const[albumName,setAlbumName]=useState('')
+  const[nameSet,setNameSet]=useState(false)
   const appUrl=window.location.origin
 
   useEffect(()=>{
@@ -415,6 +418,69 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
     }
     navigator.clipboard.writeText(url)
     setCopied(true);setTimeout(()=>setCopied(false),2000)
+  }
+
+  const handleReady=async()=>{
+    const name=hostName.trim()||'Host'
+    const aName=albumName.trim()
+    // Save host name + album name to session config
+    if(sessionId){
+      await supabase.from('sessions').update({
+        config: supabase.rpc ? undefined : undefined, // will update below
+      }).eq('id',sessionId)
+      // Store in localStorage for this device
+      localStorage.setItem(`mf_host_name_${sessionId}`, name)
+      if(aName) localStorage.setItem(`mf_album_name_${sessionId}`, aName)
+      // Update session with host_name and album_name
+      await supabase.from('sessions').update({host_name:name, album_name:aName||null}).eq('id',sessionId)
+    }
+    setNameSet(true)
+    onPlay(parts, name, aName)
+  }
+
+  // Name input screen first
+  if(!nameSet){
+    return(
+      <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',padding:'52px 24px 44px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:32}}>
+          <button className="bi" onClick={onBack}><BackIcon/></button>
+          <div>
+            <div className="head" style={{fontSize:19}}>{T('lobby')}</div>
+            <div style={{fontSize:12,color:'var(--muted)',marginTop:2}}>{lang==='de'?'Kurz noch zwei Dinge':'Just two quick things'}</div>
+          </div>
+        </div>
+        <div style={{flex:1}}>
+          <div className="lbl" style={{marginBottom:8}}>{T('hostName')}</div>
+          <p style={{fontSize:13,color:'var(--muted)',marginBottom:12}}>{T('hostNameSub')}</p>
+          <input
+            className="inp"
+            placeholder={T('hostNamePlaceholder')}
+            value={hostName}
+            onChange={e=>setHostName(e.target.value)}
+            autoFocus
+            style={{marginBottom:28}}
+          />
+          <div className="lbl" style={{marginBottom:8}}>{T('albumName')}</div>
+          <p style={{fontSize:13,color:'var(--muted)',marginBottom:12}}>{T('albumNameSub')}</p>
+          <input
+            className="inp"
+            placeholder={T('albumNamePlaceholder')}
+            value={albumName}
+            onChange={e=>setAlbumName(e.target.value)}
+            style={{marginBottom:8}}
+          />
+          <p style={{fontSize:11,color:'var(--muted)',marginTop:4}}>{lang==='de'?'Optional — kann später nicht mehr geändert werden.':'Optional — cannot be changed later.'}</p>
+        </div>
+        <button
+          className="btn bp"
+          onClick={handleReady}
+          disabled={!hostName.trim()}
+          style={{opacity:hostName.trim()?1:.35}}
+        >
+          {lang==='de'?'Weiter zur Lobby →':'Continue to Lobby →'}
+        </button>
+      </div>
+    )
   }
 
   return(
@@ -449,8 +515,8 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
       <div className="lbl" style={{marginBottom:9}}>{T('participants')}</div>
       <div style={{display:'flex',flexDirection:'column',gap:8,flex:1}}>
         <div className="card" style={{padding:'12px 16px',display:'flex',alignItems:'center',gap:11}}>
-          <div className="av" style={{width:32,height:32,fontSize:11,background:'rgba(198,255,0,.18)',border:'1.5px solid rgba(198,255,0,.35)',color:'var(--lime)'}}>Du</div>
-          <span style={{fontWeight:500,fontSize:14,flex:1}}>Du (Host)</span>
+          <div className="av" style={{width:32,height:32,fontSize:11,background:'rgba(198,255,0,.18)',border:'1.5px solid rgba(198,255,0,.35)',color:'var(--lime)'}}>{avatarLetter(hostName||'H')}</div>
+          <span style={{fontWeight:500,fontSize:14,flex:1}}>{hostName||'Host'}</span>
           <span className="chip cl" style={{fontSize:10}}>{T('host')}</span>
         </div>
         {parts.map((p,i)=>(
@@ -462,7 +528,7 @@ function LobbyScreen({lang,sessionCode,sessionId,onPlay,onBack}){
         ))}
       </div>
       <div style={{paddingTop:18}}>
-        <button className="btn bp" onClick={()=>onPlay(parts)}>{T('letsGo',parts.length+1)}</button>
+        <button className="btn bp" onClick={()=>onPlay(parts, hostName, albumName)}>{T('letsGo',parts.length+1)}</button>
         <p style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginTop:9}}>{T('joinDuringGame')}</p>
       </div>
     </div>
@@ -580,6 +646,8 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   const[streak,setStreak]=useState(0)
   const[endConfirm,setEndConfirm]=useState(false)
   const[allDone,setAllDone]=useState(false)
+  const[flashPhoto,setFlashPhoto]=useState(null)
+  const[flashVisible,setFlashVisible]=useState(false)
   const fileRef=useRef()
   const cameraRef=useRef()
   const videoRef=useRef()
@@ -598,8 +666,15 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
             if(updated.every(t=>t.status==='done'))setTimeout(()=>setAllDone(true),500)
             return updated
           })
-          if(p.new.status==='done'&&p.new.claimed_by!==myParticipantId)
+          // Live Photo Flash — new photo from ANOTHER player appears fullscreen for 3s
+          if(p.new.status==='done'&&p.new.photo_url&&p.new.claimed_by!==myParticipantId){
+            setFlashPhoto({url:p.new.photo_url,name:p.new.claimed_by_nickname||'?',text:p.new.text||''})
+            setFlashVisible(true)
+            setTimeout(()=>setFlashVisible(false),3200)
             add(`${p.new.claimed_by_nickname||'?'}: ${(p.new.text||'').slice(0,30)}…`,avatarLetter(p.new.claimed_by_nickname||'?'),'#C6FF00')
+          } else if(p.new.status==='done'&&p.new.claimed_by!==myParticipantId){
+            add(`${p.new.claimed_by_nickname||'?'}: ${(p.new.text||'').slice(0,30)}…`,avatarLetter(p.new.claimed_by_nickname||'?'),'#C6FF00')
+          }
         })
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'participants',filter:`session_id=eq.${sessionId}`},
         p=>{setParts(prev=>[...prev,p.new]);add(T('joinedMsg',p.new.nickname),avatarLetter(p.new.nickname),p.new.avatar_color||'#C6FF00')})
@@ -692,6 +767,38 @@ function GameScreen({lang,sessionId,sessionCode,sessionConfig,myParticipantId,my
   return(
     <div style={{minHeight:'100vh',paddingBottom:100}}>
       <Toast toasts={toasts}/>
+
+      {/* ── LIVE PHOTO FLASH — appears on ALL devices when someone uploads a photo ── */}
+      {flashVisible&&flashPhoto&&(
+        <div onClick={()=>setFlashVisible(false)} style={{
+          position:'fixed',inset:0,zIndex:300,cursor:'pointer',
+          animation:'flashIn .3s ease'
+        }}>
+          <style>{`@keyframes flashIn{from{opacity:0;transform:scale(1.03)}to{opacity:1;transform:scale(1)}}`}</style>
+          <img src={flashPhoto.url} alt="" style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+          <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.88) 0%,rgba(0,0,0,0) 55%)'}}/>
+          <div style={{position:'absolute',top:0,left:0,right:0,height:80,background:'linear-gradient(to bottom,rgba(0,0,0,.65) 0%,rgba(0,0,0,0) 100%)'}}/>
+          {/* Top: Memofox brand */}
+          <div style={{position:'absolute',top:52,left:24,display:'flex',alignItems:'center',gap:8}}>
+            <FoxLogo size={22}/>
+            <span style={{fontFamily:'Syne',fontWeight:700,fontSize:13,color:'#C6FF00'}}>Memo<span style={{color:'#fff'}}>fox</span></span>
+          </div>
+          {/* Tap to dismiss */}
+          <div style={{position:'absolute',top:52,right:24,background:'rgba(0,0,0,.45)',borderRadius:100,padding:'4px 12px',fontSize:11,color:'rgba(255,255,255,.55)'}}>
+            {lang==='de'?'Tippen zum Schließen':'Tap to close'}
+          </div>
+          {/* Bottom: player + task */}
+          <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'0 24px 48px'}}>
+            <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'rgba(198,255,0,.15)',border:'1px solid rgba(198,255,0,.35)',borderRadius:100,padding:'5px 14px',marginBottom:12}}>
+              <div style={{width:22,height:22,borderRadius:'50%',background:'rgba(198,255,0,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#C6FF00',fontFamily:'Syne'}}>
+                {avatarLetter(flashPhoto.name)}
+              </div>
+              <span style={{fontSize:13,fontFamily:'Syne',fontWeight:700,color:'#C6FF00'}}>{flashPhoto.name}</span>
+            </div>
+            <div style={{fontSize:15,fontWeight:600,color:'#fff',lineHeight:1.45}}>{flashPhoto.text}</div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{position:'sticky',top:0,zIndex:20,background:'var(--bg)',padding:'50px 24px 13px',borderBottom:'1px solid var(--bdr)'}}>
@@ -901,13 +1008,40 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
   const[showZeugnis,setShowZeugnis]=useState(false)
   const[showReel,setShowReel]=useState(false)
   const[copied,setCopied]=useState(false)
+  const[livePhotos,setLivePhotos]=useState([])
+  const[flashPhoto,setFlashPhoto]=useState(null)
+  const[flashVisible,setFlashVisible]=useState(false)
+
+  // Is this device the host?
+  const isHostDevice = !!localStorage.getItem(`mf_host_${sessionId}`)
+  // Album name from session or localStorage
+  const albumName = sessionData?.album_name || localStorage.getItem(`mf_album_name_${sessionId}`) || null
+  const hostName = sessionData?.host_name || localStorage.getItem(`mf_host_name_${sessionId}`) || null
 
   useEffect(()=>{
     setTimeout(()=>setConf(false),4200)
     setTimeout(()=>setShowZeugnis(true),2000)
     if(!sessionId)return
-    supabase.from('tasks').select('*').eq('session_id',sessionId).eq('status','done').order('completed_at').then(({data})=>{if(data)setCompletions(data)})
+    supabase.from('tasks').select('*').eq('session_id',sessionId).eq('status','done').order('completed_at').then(({data})=>{if(data){setCompletions(data);setLivePhotos(data.filter(c=>c.photo_url))}})
     supabase.from('participants').select('*').eq('session_id',sessionId).then(({data})=>{if(data)setParts(data)})
+
+    // ── SECRET FEATURE: LIVE PHOTO FLASH ──────────────────────────────────────
+    // Every time a new photo lands → flash it fullscreen on ALL devices for 3s
+    const ch = supabase.channel(`end-flash-${sessionId}`)
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'tasks',filter:`session_id=eq.${sessionId}`},
+        p=>{
+          if(p.new.photo_url && p.new.status==='done'){
+            setFlashPhoto({url:p.new.photo_url, name:p.new.claimed_by_nickname||'?', text:p.new.text||''})
+            setFlashVisible(true)
+            setTimeout(()=>setFlashVisible(false),3200)
+            setLivePhotos(prev=>{
+              if(prev.find(x=>x.id===p.new.id))return prev
+              return [...prev,p.new]
+            })
+          }
+        })
+      .subscribe()
+    return()=>supabase.removeChannel(ch)
   },[sessionId])
 
   const albumUrl=`${window.location.origin}?album=${sessionId}`
@@ -931,7 +1065,7 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
   const vib=VIBES.find(v=>v.id===sessionData?.config?.vibe)||{icon:'🔥',label:{de:'Party',en:'Party'}}
   const dateStr=new Date(sessionData?.created_at||Date.now()).toLocaleDateString(lang==='de'?'de-DE':'en-GB',{day:'2-digit',month:'long',year:'numeric'})
   const quote=getQuote(lang)
-  const photosOnly=completions.filter(c=>c.photo_url)
+  const photosOnly=livePhotos.filter(c=>c.photo_url)
   const trickCompletions=completions.filter(c=>c.is_trick)
 
   // Wrapped stats — only count entries with real nicknames
@@ -948,10 +1082,56 @@ function EndScreen({lang,sessionId,sessionData,onHome}){
   return(
     <div style={{minHeight:'100vh',padding:'52px 24px 60px',overflowY:'auto'}}>
       <Confetti on={conf}/>
-      <div className="fu" style={{textAlign:'center',marginBottom:32}}>
+
+      {/* ── SECRET FEATURE: LIVE PHOTO FLASH ─────────────────────────────── */}
+      {/* When someone completes a task with photo → appears FULLSCREEN on ALL devices */}
+      {flashVisible&&flashPhoto&&(
+        <div style={{
+          position:'fixed',inset:0,zIndex:500,
+          background:'#000',
+          display:'flex',flexDirection:'column',
+          animation:'flashIn .25s ease'
+        }}>
+          <style>{`@keyframes flashIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}`}</style>
+          <img
+            src={flashPhoto.url}
+            alt=""
+            style={{width:'100%',flex:1,objectFit:'cover',display:'block'}}
+          />
+          <div style={{
+            position:'absolute',inset:0,
+            background:'linear-gradient(to top,rgba(0,0,0,.85) 0%,rgba(0,0,0,0) 50%)',
+          }}/>
+          <div style={{position:'absolute',bottom:0,left:0,right:0,padding:'24px 24px 44px'}}>
+            <div style={{
+              display:'inline-block',
+              background:'rgba(198,255,0,.15)',
+              border:'1px solid rgba(198,255,0,.3)',
+              borderRadius:100,
+              padding:'4px 14px',
+              fontSize:12,fontFamily:'Syne',fontWeight:700,color:'#C6FF00',
+              marginBottom:10
+            }}>📸 {flashPhoto.name}</div>
+            <div style={{fontSize:16,fontWeight:600,color:'#fff',lineHeight:1.4}}>{flashPhoto.text}</div>
+          </div>
+          <div style={{
+            position:'absolute',top:52,right:24,
+            background:'rgba(0,0,0,.5)',borderRadius:100,
+            padding:'6px 14px',fontSize:11,color:'rgba(255,255,255,.6)'
+          }}>✕</div>
+        </div>
+      )}
+
+      <div className="fu" style={{textAlign:'center',marginBottom:24}}>
         <FoxLogo size={48}/>
-        <div className="disp" style={{fontSize:38,marginTop:12,marginBottom:7}}>{T('whatANight')}</div>
+        {/* Album name — shown if set, editable only by host */}
+        {albumName
+          ? <div className="disp" style={{fontSize:28,marginTop:12,marginBottom:4,lineHeight:1.2}}>{albumName}</div>
+          : <div className="disp" style={{fontSize:38,marginTop:12,marginBottom:7}}>{T('whatANight')}</div>
+        }
+        {albumName && <div className="disp" style={{fontSize:16,color:'var(--muted)',marginBottom:4}}>{T('whatANight')}</div>}
         <p style={{color:'var(--muted)',fontSize:15}}>{T('albumReady')}</p>
+        {hostName && <p style={{color:'var(--muted)',fontSize:12,marginTop:4}}>Host: {hostName}</p>}
       </div>
 
       {/* Stats */}
@@ -1211,6 +1391,15 @@ export default function App(){
     go('lobby')
   }
 
+  const handleLobbyPlay=(parts, hostName, albumName)=>{
+    // Host gets their name set here
+    const name=hostName||'Host'
+    setMyNickname(name)
+    // Store host token in localStorage for album name protection
+    localStorage.setItem(`mf_host_${sessionId}`, '1')
+    go('game')
+  }
+
   const handleGuestJoined=({sessionId:sid,participantId,nickname,color})=>{
     setSessionId(sid);setMyParticipantId(participantId);setMyNickname(nickname);setMyColor(color);setIsHost(false)
     supabase.from('sessions').select('*').eq('id',sid).single().then(({data})=>{if(data){setSessionData(data);setSessionCode(data.code)}})
@@ -1252,7 +1441,7 @@ export default function App(){
         )}
         {screen==='home'&&<HomeScreen lang={lang} setLang={setAndSaveLang} onHost={()=>{setSetupKey(k=>k+1);go('setup')}} onJoin={()=>go('join')} onHistory={()=>go('history')} histCount={JSON.parse(localStorage.getItem('quest_sessions')||'[]').length} onLegal={()=>go('legal')}/>}
         {screen==='setup'&&<SetupScreen key={setupKey} lang={lang} onStart={handleHostStart} onBack={()=>go('home')}/>}
-        {screen==='lobby'&&<LobbyScreen lang={lang} sessionCode={sessionCode} sessionId={sessionId} onPlay={()=>go('game')} onBack={()=>go('setup')}/>}
+        {screen==='lobby'&&<LobbyScreen lang={lang} sessionCode={sessionCode} sessionId={sessionId} onPlay={handleLobbyPlay} onBack={()=>go('setup')}/>}
         {screen==='join'&&<JoinScreen lang={lang} prefillCode={prefillCode} onJoined={handleGuestJoined} onBack={()=>go('home')}/>}
         {screen==='game'&&<GameScreen lang={lang} sessionId={sessionId} sessionCode={sessionCode} sessionConfig={sessionData?.config} myParticipantId={myParticipantId} myNickname={myNickname} myColor={myColor} isHost={isHost} showQRGlobal={showQR} setShowQRGlobal={setShowQR} onEnd={()=>go('end')} onSaveSession={saveSession}/>}
         {screen==='end'&&<EndScreen lang={lang} sessionId={sessionId} sessionData={sessionData} onHome={()=>{setSessionId(null);setSessionCode(null);setSessionData(null);go('home')}}/>}
